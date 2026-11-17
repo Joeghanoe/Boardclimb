@@ -77,6 +77,25 @@ export class ProblemBrowser {
     };
   }
 
+  /** Problem-first discovery of downloaded problems from all manufacturers; never fetches or lights. */
+  async browseDownloaded(filters: ProblemFilters, after: number | null, search = ''): Promise<BrowsePage> {
+    const page = await this.options.cache.listProblems({
+      configKey: null,
+      filters,
+      providerHasRatings: true,
+      after,
+      limit: this.pageSize,
+      search,
+    });
+    return {
+      items: page.items,
+      next: page.last,
+      hasMore: page.items.length === this.pageSize,
+      freshness: 'cached',
+      notice: null,
+    };
+  }
+
   /** Re-fetches the first provider page so ratings and grades stay current. One request per configuration at a time. */
   refresh(configuration: BoardConfiguration): Promise<RefreshResult> {
     const configKey = makeConfigKey(configuration);
@@ -115,7 +134,12 @@ export class ProblemBrowser {
     try {
       const result = await catalog.listProblems(configuration, { pageSize: this.pageSize });
       await cache.upsertSummaries(configKey, result.items);
-      await cache.saveSyncState({ ...state, lastSuccessAt: this.options.clock.now().toISOString() });
+      await cache.saveSyncState({
+        ...state,
+        nextCursor: result.nextCursor,
+        exhausted: result.nextCursor === null,
+        lastSuccessAt: this.options.clock.now().toISOString(),
+      });
       this.report(configuration, result.items.length, result.skipped, null, started);
       return { ok: true, fetched: result.items.length, skipped: result.skipped };
     } catch (error) {

@@ -111,12 +111,15 @@ export function LogControls({
       </View>
 
       {confirmingFlash ? (
-        <Notice
-          title={conflict.title}
-          message={conflict.action}
-          actionLabel="Mark as flash anyway"
-          onAction={() => void confirmFlash()}
-        />
+        <View style={{ gap: spacing.sm }}>
+          <Notice
+            title={conflict.title}
+            message={conflict.action}
+            actionLabel="Mark as flash anyway"
+            onAction={() => void confirmFlash()}
+          />
+          <Button label="Cancel flash" onPress={() => setConfirmingFlash(false)} />
+        </View>
       ) : null}
       {problem ? <Notice tone="error" title={problem.title} message={problem.action} /> : null}
     </Card>

@@ -1,0 +1,350 @@
+{
+  "title": "BoardClimb iPhone gym acceptance — not executed",
+  "process": "Choose the exact wall > explicitly connect > Light up > log > interrupt/recover > verify offline history. Owner/tester: product owner. Run on each manufacturer; record device/firmware and evidence.",
+  "systems": ["Phone app", "Physical board"],
+  "reference": "Technical setup, preconditions, cleanup and pending evidence: ../iphone-gym-test.md; ADR-0001 requirements. Sign-off belongs to the tester, not the generator.",
+  "scenarios": [
+    {
+      "id": "1",
+      "title": "GOOD: find, explicitly light and log on Kilter (FR-001/003/005/008/009/012–015)",
+      "stages": [
+        {
+          "title": "Prepare and choose the correct wall",
+          "steps": [
+            {
+              "who": "Climber",
+              "step": "Record app revision, iOS version, board model/layout/size/angle, firmware if visible and test problem names. Get agreement before changing the wall.",
+              "status_a": "",
+              "status_b": "",
+              "target": "",
+              "expected": "The physical wall matches the selected configuration. Tester owns cleanup; use designated test problems, not genuine history."
+            },
+            {
+              "who": "Climber",
+              "step": "Choose this board layout on Wi-Fi; wait for the first download and open two problems.",
+              "status_a": "Problems visible",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Names, published grades, ratings or Not rated, setter and hold map appear. First snapshot may be large; leave app open."
+            },
+            {
+              "who": "Climber",
+              "step": "Choose the nearby controller and connect.",
+              "status_a": "Connected",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Only the chosen controller connects; no LED pattern changes. Unknown capabilities remain unknown."
+            }
+          ]
+        },
+        {
+          "title": "Light, browse and log",
+          "steps": [
+            {
+              "who": "Climber",
+              "step": "With the wall clear, tap Light up once. Compare every lit hold and role with the problem.",
+              "status_a": "Sent",
+              "status_b": "Chosen problem",
+              "target": "Aim 1–2 s; record actual",
+              "expected": "Only this explicit tap changes LEDs. Phone says sent from this phone; it does not claim physical confirmation. Record exact mismatches and stop sending if wrong."
+            },
+            {
+              "who": "Climber",
+              "step": "Browse a different problem, change filters and add one attempt.",
+              "status_a": "New problem / 1 attempt",
+              "status_b": "Previous pattern",
+              "target": "",
+              "expected": "The physical LEDs keep the previously sent pattern. Phone logs one attempt immediately."
+            },
+            {
+              "who": "Climber",
+              "step": "Turn Top on, then off; request Flash after that failed attempt.",
+              "status_a": "1 → 2 → 1 attempts",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Top adds one reversible success attempt and off removes it. Flash after a failed attempt asks for correction or explicit acknowledgement. No passive LED change."
+            },
+            {
+              "who": "Climber",
+              "step": "Force-close and reopen. Review the recorded problem’s history.",
+              "status_a": "History retained",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "The saved manual attempt and original session day remain. No unsolicited lighting or connection selection on startup."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "GOOD: find, explicitly light and log on MoonBoard (FR-001/003/005/008/009/012–015)",
+      "stages": [
+        {
+          "title": "Prepare and choose the correct wall",
+          "steps": [
+            {
+              "who": "Climber",
+              "step": "Record app revision, iOS version, board model/layout/size/angle, firmware if visible and test problem names. Get agreement before changing the wall.",
+              "status_a": "",
+              "status_b": "",
+              "target": "",
+              "expected": "The physical wall matches the selected configuration. Tester owns cleanup; use designated test problems, not genuine history."
+            },
+            {
+              "who": "Climber",
+              "step": "Choose this board layout on Wi-Fi; wait for the first download and open two problems.",
+              "status_a": "Problems visible",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Names, published grades, ratings or Not rated, setter and hold map appear. First snapshot may be large; leave app open."
+            },
+            {
+              "who": "Climber",
+              "step": "Choose the nearby controller and connect.",
+              "status_a": "Connected",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Only the chosen controller connects; no LED pattern changes. Unknown capabilities remain unknown."
+            }
+          ]
+        },
+        {
+          "title": "Light, browse and log",
+          "steps": [
+            {
+              "who": "Climber",
+              "step": "With the wall clear, tap Light up once. Compare every lit hold and role with the problem.",
+              "status_a": "Sent",
+              "status_b": "Chosen problem",
+              "target": "Aim 1–2 s; record actual",
+              "expected": "Only this explicit tap changes LEDs. Phone says sent from this phone; it does not claim physical confirmation. Record exact mismatches and stop sending if wrong."
+            },
+            {
+              "who": "Climber",
+              "step": "Browse a different problem, change filters and add one attempt.",
+              "status_a": "New problem / 1 attempt",
+              "status_b": "Previous pattern",
+              "target": "",
+              "expected": "The physical LEDs keep the previously sent pattern. Phone logs one attempt immediately."
+            },
+            {
+              "who": "Climber",
+              "step": "Turn Top on, then off; request Flash after that failed attempt.",
+              "status_a": "1 → 2 → 1 attempts",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Top adds one reversible success attempt and off removes it. Flash after a failed attempt asks for correction or explicit acknowledgement. No passive LED change."
+            },
+            {
+              "who": "Climber",
+              "step": "Force-close and reopen. Review the recorded problem’s history.",
+              "status_a": "History retained",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "The saved manual attempt and original session day remain. No unsolicited lighting or connection selection on startup."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "title": "GOOD: find, explicitly light and log on Tension (FR-001/003/005/008/009/012–015)",
+      "stages": [
+        {
+          "title": "Prepare and choose the correct wall",
+          "steps": [
+            {
+              "who": "Climber",
+              "step": "Record app revision, iOS version, board model/layout/size/angle, firmware if visible and test problem names. Get agreement before changing the wall.",
+              "status_a": "",
+              "status_b": "",
+              "target": "",
+              "expected": "The physical wall matches the selected configuration. Tester owns cleanup; use designated test problems, not genuine history."
+            },
+            {
+              "who": "Climber",
+              "step": "Choose this board layout on Wi-Fi; wait for the first download and open two problems.",
+              "status_a": "Problems visible",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Names, published grades, ratings or Not rated, setter and hold map appear. First snapshot may be large; leave app open."
+            },
+            {
+              "who": "Climber",
+              "step": "Choose the nearby controller and connect.",
+              "status_a": "Connected",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Only the chosen controller connects; no LED pattern changes. Unknown capabilities remain unknown."
+            }
+          ]
+        },
+        {
+          "title": "Light, browse and log",
+          "steps": [
+            {
+              "who": "Climber",
+              "step": "With the wall clear, tap Light up once. Compare every lit hold and role with the problem.",
+              "status_a": "Sent",
+              "status_b": "Chosen problem",
+              "target": "Aim 1–2 s; record actual",
+              "expected": "Only this explicit tap changes LEDs. Phone says sent from this phone; it does not claim physical confirmation. Record exact mismatches and stop sending if wrong."
+            },
+            {
+              "who": "Climber",
+              "step": "Browse a different problem, change filters and add one attempt.",
+              "status_a": "New problem / 1 attempt",
+              "status_b": "Previous pattern",
+              "target": "",
+              "expected": "The physical LEDs keep the previously sent pattern. Phone logs one attempt immediately."
+            },
+            {
+              "who": "Climber",
+              "step": "Turn Top on, then off; request Flash after that failed attempt.",
+              "status_a": "1 → 2 → 1 attempts",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Top adds one reversible success attempt and off removes it. Flash after a failed attempt asks for correction or explicit acknowledgement. No passive LED change."
+            },
+            {
+              "who": "Climber",
+              "step": "Force-close and reopen. Review the recorded problem’s history.",
+              "status_a": "History retained",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "The saved manual attempt and original session day remain. No unsolicited lighting or connection selection on startup."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "title": "BAD: permission denied or Bluetooth off (FR-004/015/016)",
+      "stages": [
+        {
+          "title": "Refuse connection and recover",
+          "steps": [
+            {
+              "who": "Climber",
+              "step": "Turn Bluetooth off or deny BoardClimb Bluetooth access, then look for boards.",
+              "status_a": "Recovery guidance",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "An actionable error appears. Browsing downloaded details and logging remain usable. No connection or lighting is claimed."
+            },
+            {
+              "who": "Climber",
+              "step": "Restore access/radio and explicitly scan and select again.",
+              "status_a": "Selection required",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "A controller list is shown; strongest/previous device is never auto-selected. Connect is possible when hardware permits."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "title": "BAD: interruption, wrong layout and competing phone (FR-009–011/017)",
+      "stages": [
+        {
+          "title": "Lose the link without relighting",
+          "steps": [
+            {
+              "who": "Climber",
+              "step": "After sending a problem, lock/unlock the phone, then move out of range and back.",
+              "status_a": "Connected/lost/recovered",
+              "status_b": "No automatic relight",
+              "target": "",
+              "expected": "Lost status/recovery is truthful. Reconnect when allowed sends no LED pattern; another Light up tap is required. Record behaviour for each tested manufacturer."
+            },
+            {
+              "who": "Climber",
+              "step": "While connected, browse a different incompatible configuration and tap Light up.",
+              "status_a": "Actionable error",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "The command is refused with guidance to use the matching board/layout. It must not send an incomplete or incompatible pattern."
+            }
+          ]
+        },
+        {
+          "title": "Share the wall with a consenting second phone",
+          "steps": [
+            {
+              "who": "Climber",
+              "step": "Connect a second consenting phone and issue separate explicit commands, one at a time.",
+              "status_a": "Observed result",
+              "status_b": "Latest successful explicit pattern",
+              "target": "",
+              "expected": "Record simultaneous control, takeover or refusal exactly as observed. Latest successful explicit command wins when supported. Connection alone never changes LEDs. Unknown/refused takeover is not a pass for supported takeover."
+            },
+            {
+              "who": "Climber",
+              "step": "If an old connection or layout unexpectedly returns, stop sending and note the exact order of taps.",
+              "status_a": "Latest choice",
+              "status_b": "No unexpected command",
+              "target": "",
+              "expected": "The last explicit selection must remain selected. Report NOK and evidence if an earlier pending connection replaces it."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "title": "IN BETWEEN: offline history and downloaded discovery (FR-004/006/007/014/015/018)",
+      "stages": [
+        {
+          "title": "Browse without the network or a board",
+          "steps": [
+            {
+              "who": "Climber",
+              "step": "After warming the two test problems, turn network and Bluetooth off and reopen the app.",
+              "status_a": "Cached content",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Board/layout choices remain available; downloaded names, grades, ratings and opened hold maps remain readable. History is retained."
+            },
+            {
+              "who": "Climber",
+              "step": "Open Downloaded; search a cached problem name and apply grade/rating filters.",
+              "status_a": "Filtered cached results",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Results span previously browsed layouts. New unseen layouts need a first download. Missing ratings are not displayed as zero."
+            },
+            {
+              "who": "Climber",
+              "step": "Add and correct a test attempt while offline, then restart again.",
+              "status_a": "Correct saved total",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "The corrected count persists, never goes below zero and preserves its original date. Top/Flash never inflate attempts."
+            },
+            {
+              "who": "Climber",
+              "step": "Restore network. Retry catalog loading or refresh; check history.",
+              "status_a": "History retained",
+              "status_b": "Unchanged",
+              "target": "",
+              "expected": "Refresh preserves cached details/history. New rows remain reachable on further pages after a changed snapshot."
+            },
+            {
+              "who": "Climber",
+              "step": "Clean up the designated test log entries using visible controls. Return the board to the agreed problem using its official app if necessary.",
+              "status_a": "Test contributions removed",
+              "status_b": "Agreed final pattern",
+              "target": "",
+              "expected": "Tester records which test contributions were removed. Do not uninstall a phone containing genuine history. Only explicit lighting actions change the board."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

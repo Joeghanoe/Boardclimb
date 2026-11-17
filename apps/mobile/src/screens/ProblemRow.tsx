@@ -6,17 +6,18 @@ import { formatRating } from './presentation/formatRating';
 
 interface ProblemRowProps {
   problem: ProblemSummary;
+  context?: string;
   onPress: () => void;
 }
 
-export function ProblemRow({ problem, onPress }: ProblemRowProps) {
+export function ProblemRow({ problem, onPress, context }: ProblemRowProps) {
   const { colors } = useTheme();
   const grade = formatGrade(problem.grade);
   const rating = formatRating(problem.rating);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${problem.name}, grade ${grade}, ${rating.spoken}`}
+      accessibilityLabel={`${problem.name}, grade ${grade}, ${rating.spoken}${context ? ', ' + context : ''}`}
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
@@ -28,6 +29,11 @@ export function ProblemRow({ problem, onPress }: ProblemRowProps) {
         <AppText variant="bodyStrong" numberOfLines={2}>
           {problem.name}
         </AppText>
+        {context ? (
+          <AppText tone="muted" variant="caption">
+            {context}
+          </AppText>
+        ) : null}
         <AppText tone="muted">{rating.text}</AppText>
       </View>
       <AppText variant="title">{grade}</AppText>

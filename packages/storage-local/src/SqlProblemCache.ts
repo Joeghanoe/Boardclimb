@@ -45,8 +45,16 @@ export class SqlProblemCache implements ProblemCache {
 
   async listProblems(query: CachedProblemQuery): Promise<CachedProblemPage> {
     const { filters } = query;
-    const where = ['config_key = ?'];
-    const params: SqlValue[] = [query.configKey];
+    const where = ['1=1'];
+    const params: SqlValue[] = [];
+    if (query.configKey !== null) {
+      where.push('config_key = ?');
+      params.push(query.configKey);
+    }
+    if (query.search) {
+      where.push('instr(lower(name), lower(?)) > 0');
+      params.push(query.search);
+    }
     if (query.after !== null) {
       where.push('seq > ?');
       params.push(query.after);
@@ -90,7 +98,11 @@ export class SqlProblemCache implements ProblemCache {
     return this.db.transaction(async () => {
       await this.db.run(UPSERT, summaryParams(configKey, summary));
       await this.db.run('UPDATE problems SET detail_json = ? WHERE problem_key = ?', [
-        JSON.stringify({ holds }),
+        JSON.stringify({
+          holds,
+          ...(problem.bounds ? { bounds: problem.bounds } : {}),
+          ...(problem.setter ? { setter: problem.setter } : {}),
+        }),
         problem.key,
       ]);
     });

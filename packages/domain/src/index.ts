@@ -27,3 +27,6 @@ export * from './planAchievementChange';
 export * from './planAttemptChange';
 export * from './sessionDateFor';
 export * from './summarizeLog';
+
+export type { BoardBounds } from './BoardBounds';
+export { isBoardBounds } from './isBoardBounds';

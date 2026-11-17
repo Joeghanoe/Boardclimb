@@ -1,8 +1,11 @@
 # Proposed verification workflow
 
-Status: inactive proposal for human review (CLD.2). No workflow is installed under
-`.github/workflows`. To activate after review, a human can put the YAML below in
-`.github/workflows/verify.yml`. Hosted execution remains unverified.
+Status: historical proposal, superseded by `.github/workflows/verify.yml` when the
+product owner requested completion of the remaining MVP work (2026-11-17), including
+the previously listed CI activation. The active workflow pins action revisions, runs
+the same project gate, exports web/iOS JavaScript and compiles Android. It has no
+deployment, signing credentials or write permissions. Hosted results are recorded
+separately in the implementation report. The original minimal proposal follows.
 
 The job uses the same frozen install and `bun run verify` as local development,
 including SQLite scale tests. Version pins are read from the repository. It does

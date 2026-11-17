@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 import { radii, spacing, touchTarget } from '../tokens/layout';
 import { AppText } from './AppText';
@@ -18,7 +18,8 @@ export function Chip({ label, selected, onPress, accessibilityLabel, testID }: C
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ selected }}
+      accessibilityState={Platform.OS === 'web' ? {} : { selected }}
+      {...(Platform.OS === 'web' ? { 'aria-pressed': selected } : {})}
       {...(testID === undefined ? {} : { testID })}
       onPress={onPress}
       style={[

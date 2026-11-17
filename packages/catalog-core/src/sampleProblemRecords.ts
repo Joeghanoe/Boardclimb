@@ -51,11 +51,12 @@ export function sampleProblemRecords({
       gradeSystem,
       gradeLabel: grades[(index * 5) % grades.length] ?? grades[0] ?? '',
       rating: rated && index % 7 !== 3 ? Math.round((2 + ((index * 3) % 7) / 2.4) * 10) / 10 : null,
+      bounds: { left: 0, right: 10, bottom: 0, top: 18 },
       holds: [
-        { holdId: `h${(index % 9) + 1}`, role: 'start' },
-        { holdId: `h${(index % 9) + 10}`, role: 'hand' },
-        { holdId: `h${(index % 9) + 20}`, role: 'foot' },
-        { holdId: `h${(index % 9) + 30}`, role: 'finish' },
+        { holdId: `h${(index % 9) + 1}`, role: 'start', x: 3, y: 3 },
+        { holdId: `h${(index % 9) + 10}`, role: 'hand', x: 6, y: 9 },
+        { holdId: `h${(index % 9) + 20}`, role: 'foot', x: 7, y: 2 },
+        { holdId: `h${(index % 9) + 30}`, role: 'finish', x: 4, y: 17 },
       ],
     };
   });

@@ -5,13 +5,15 @@ import { AppText, Button, spacing, useTheme } from '@boardclimb/design-system';
 
 interface ScreenFrameProps {
   title: string;
+  /** Inactive preserved screens are outside the current document landmarks. */
+  active?: boolean;
   onBack?: () => void;
   headerRight?: ReactNode;
   children: ReactNode;
 }
 
 /** Page chrome: safe areas, a back control, the title and one optional action. Content is capped for tablets and desktop. */
-export function ScreenFrame({ title, onBack, headerRight, children }: ScreenFrameProps) {
+export function ScreenFrame({ title, onBack, headerRight, children, active = true }: ScreenFrameProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   return (
@@ -30,14 +32,14 @@ export function ScreenFrame({ title, onBack, headerRight, children }: ScreenFram
       <View style={styles.column}>
         <View style={styles.header}>
           {onBack ? <Button label="Back" onPress={onBack} /> : null}
-          <View style={styles.title} accessibilityRole="header">
+          <View style={styles.title} accessibilityRole={active ? 'header' : 'none'}>
             <AppText variant="title" numberOfLines={2}>
               {title}
             </AppText>
           </View>
           {headerRight}
         </View>
-        <View style={styles.body} role="main">
+        <View style={styles.body} {...(active ? { role: 'main' as const } : {})}>
           {children}
         </View>
       </View>

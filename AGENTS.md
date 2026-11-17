@@ -30,6 +30,8 @@ packages/
   catalog-kilter|moonboard|tension/   one adapter each over a ProviderSource port
   bluetooth-core/         BoardController contract, state machines, BoardError codes, BleTransport port
   board-kilter|moonboard|tension/     one controller each over BleTransport
+  provider-snapshots/     public BoardSesh dataset adapter and pinned hardware metadata
+  protocol-aurora/        shared reference-derived Aurora v2/v3 encoder
   storage-local/          SQLite schema, migrations, SQL stores over the SqlDatabase port
   design-system/          tokens and primitives; imports nothing
 tests/architecture/       dependency-boundary, adapter-registry and design-consistency tests
@@ -47,7 +49,7 @@ Packages are `@boardclimb/<folder-name>`. Test files sit beside their source as 
 ## Current decisions
 
 - Append-only event log with derived totals and set-style toggles: no stored totals, no flip commands. ADR: `docs/adr/ADR-0003-local-persistence-and-log-derivation.md`
-- Adapters for all three boards exist from the first iteration; vendor transports are unverified spikes that return `provider_unverified` or `protocol_unverified` instead of guessing. ADR: `docs/adr/ADR-0002-react-native-architecture-and-integrations-updated.md`
+- Native composition uses public BoardSesh snapshot sources and reference-derived BLE protocols for all three boards (ADR-0005); physical compatibility is still unverified. Sample mode remains explicit on web. Constructors without a source/encoder still return `provider_unverified` or `protocol_unverified` instead of guessing. ADR: `docs/adr/ADR-0002-react-native-architecture-and-integrations-updated.md`
 - Only `lightUp` sends an LED command; connection, reconnection, resume and browsing never do. ADR: `docs/adr/ADR-0001-product-experience-and-logging-updated.md`
 - Bun workspaces and `bun test`, TypeScript strict, Expo with a development client (Expo and Metro run on Node; everything else on Bun, hoisted linker). ADR: `docs/adr/ADR-0004-toolchain-and-test-strategy.md`
 
@@ -82,7 +84,7 @@ Node from `.node-version` and stable Bun from `packageManager` in `package.json`
 
 ## Verifying
 
-CI runs `bun install --frozen-lockfile`, then `bun run verify` (`scripts/verify.ts`: format check, lint and `tsc --noEmit` in parallel, then `bun test` including the architecture tests). The agent's quick check is the project verify in `~/.golden-path-harness/projects/` (`--fast` skips the SQLite scale tests); this repo carries no copy of it. The design gate (`tvh greenfield check`) runs in design-only mode because its code checks are C# specific; the repo has no pipeline file yet, so nothing runs in CI: propose one as a diff for a human (CLD.2).
+CI runs `bun install --frozen-lockfile`, then `bun run verify` (`scripts/verify.ts`: format check, lint and `tsc --noEmit` in parallel, then `bun test` including the architecture tests). The agent's quick check is the project verify in `~/.golden-path-harness/projects/` (`--fast` skips the SQLite scale tests); this repo carries no copy of it. The design gate (`tvh greenfield check`) runs in design-only mode because its code checks are C# specific; the active `.github/workflows/verify.yml` runs the same project gate, web/iOS JavaScript exports and Android compilation. CI activation was part of the product owner’s 2026-11-17 request to finish the remaining MVP; deployment and signed release publication remain separate human actions.
 
 Every required local check also runs in CI using the same implementation and effective policy: `bun run verify` is that implementation. ADRs live in `docs/adr/`. Screens are verified by rendering the app with react-native-web and screenshotting at 320, 390, 768 and 1280 px (UI-1). Real-device, BLE and vendor checks are not run here; missing evidence stays listed in the design's Known limits.
 

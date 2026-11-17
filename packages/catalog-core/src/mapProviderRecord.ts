@@ -1,3 +1,4 @@
+import { isBoardBounds } from '@boardclimb/domain';
 import { makeGrade, makeProblemKey } from '@boardclimb/domain';
 import type {
   BoardConfiguration,
@@ -46,7 +47,23 @@ export function toProblem(configuration: BoardConfiguration, record: ProviderPro
   const holds: HoldPlacement[] = [];
   for (const hold of record.holds) {
     if (!isText(hold.holdId) || !HOLD_ROLES.includes(hold.role)) return null;
-    holds.push({ holdId: hold.holdId, role: hold.role as HoldRole });
+    if ([hold.x, hold.y, hold.ledPosition].some((value) => value !== undefined && !Number.isFinite(value)))
+      return null;
+    if (
+      hold.ledPosition !== undefined &&
+      (!Number.isInteger(hold.ledPosition) || hold.ledPosition < 0 || hold.ledPosition > 65535)
+    )
+      return null;
+    if (hold.ledColor !== undefined && !/^[0-9a-f]{6}$/i.test(hold.ledColor)) return null;
+    holds.push({ ...hold, role: hold.role as HoldRole });
   }
-  return { ...summary, holds };
+  if (record.setter !== undefined && !isText(record.setter)) return null;
+  const bounds = record.bounds;
+  if (bounds !== undefined && !isBoardBounds(bounds)) return null;
+  return {
+    ...summary,
+    holds,
+    ...(bounds ? { bounds } : {}),
+    ...(record.setter ? { setter: record.setter } : {}),
+  };
 }

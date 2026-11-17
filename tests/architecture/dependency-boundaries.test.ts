@@ -4,6 +4,8 @@ import { ROOT, importsOf, isTestFile, readJson, sources } from './sourceFiles';
 
 /** The permitted dependency direction (AGENTS.md, ADR-0002 section 2.1, CODE.8). */
 const ALLOWED: Record<string, string[]> = {
+  'packages/protocol-aurora': ['domain', 'bluetooth-core'],
+  'packages/provider-snapshots': ['domain', 'catalog-core'],
   'packages/domain': [],
   'packages/design-system': [],
   'packages/catalog-core': ['domain'],

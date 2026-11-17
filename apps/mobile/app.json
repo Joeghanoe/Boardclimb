@@ -5,7 +5,32 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "plugins": ["expo-sqlite", "expo-status-bar"],
-    "web": { "bundler": "metro", "output": "single" }
+    "plugins": [
+      "expo-sqlite",
+      "expo-status-bar",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": true,
+          "bluetoothAlwaysPermission": "BoardClimb uses Bluetooth to find and light the climbing board you choose."
+        }
+      ]
+    ],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "scheme": "boardclimb",
+    "ios": {
+      "bundleIdentifier": "com.boardclimb.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSBluetoothAlwaysUsageDescription": "BoardClimb uses Bluetooth when you choose to find or connect to a climbing board."
+      }
+    },
+    "android": {
+      "package": "com.boardclimb.app"
+    }
   }
 }

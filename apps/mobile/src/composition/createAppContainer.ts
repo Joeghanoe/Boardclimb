@@ -10,9 +10,10 @@ import {
 import type { Clock, IdGenerator, LogStore, SettingsStore } from '@boardclimb/application';
 import type { BleTransport } from '@boardclimb/bluetooth-core';
 import { InMemoryProblemCache } from '@boardclimb/catalog-core';
-import type { ProblemCache } from '@boardclimb/catalog-core';
+import type { ProviderSource, ProblemCache } from '@boardclimb/catalog-core';
 import { SqlLogStore, SqlProblemCache, SqlSettingsStore, migrate } from '@boardclimb/storage-local';
 import type { SqlDatabase } from '@boardclimb/storage-local';
+import type { Manufacturer } from '@boardclimb/domain';
 import type { AppContainer } from './AppContainer';
 import { controllerLookup, createCatalogs, createControllers, lookup } from './createRegistry';
 import type { Mode } from './createRegistry';
@@ -24,6 +25,7 @@ export interface AppContainerDependencies {
   clock: Clock;
   ids: IdGenerator;
   mode: Mode;
+  sources?: Record<Manufacturer, ProviderSource>;
   diagnostics?: RingDiagnosticsSink;
   pageSize?: number;
 }
@@ -50,7 +52,7 @@ export async function createAppContainer(dependencies: AppContainerDependencies)
     settings = new InMemorySettingsStore();
   }
 
-  const catalogs = lookup(createCatalogs(mode));
+  const catalogs = lookup(createCatalogs(mode, dependencies.sources));
   const controllers = controllerLookup(createControllers(mode, transport));
 
   return {

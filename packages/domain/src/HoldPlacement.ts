@@ -4,4 +4,8 @@ import type { HoldRole } from './HoldRole';
 export interface HoldPlacement {
   holdId: string;
   role: HoldRole;
+  x?: number;
+  y?: number;
+  ledPosition?: number;
+  ledColor?: string;
 }

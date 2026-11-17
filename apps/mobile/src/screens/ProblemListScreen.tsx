@@ -1,4 +1,5 @@
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, TextInput, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import type { BoardSelection } from '@boardclimb/application';
 import { AppText, Button, Card, Notice, spacing, useTheme } from '@boardclimb/design-system';
 import { defaultProblemFilters } from '@boardclimb/domain';
@@ -13,14 +14,20 @@ import { describeCatalogError } from './presentation/describeCatalogError';
 import { describeConfiguration } from './presentation/describeConfiguration';
 import { describeManufacturer } from './presentation/describeManufacturer';
 import { useBoardSnapshot } from './useBoardSnapshot';
+import { useConfigurationLabels } from './useConfigurationLabels';
 import { useProblemList } from './useProblemList';
 
 interface ProblemListScreenProps {
   container: AppContainer;
+  active: boolean;
+  downloaded: boolean;
+  search: string;
+  onChangeDownloaded: (value: boolean) => void;
+  onChangeSearch: (value: string) => void;
   selection: BoardSelection | null;
   filters: ProblemFilters;
   onChangeFilters: (next: ProblemFilters) => void;
-  onOpenProblem: (problem: ProblemSummary) => void;
+  onOpenProblem: (problem: ProblemSummary) => Promise<void>;
   onChooseLayout: () => void;
   onOpenBoard: () => void;
 }
@@ -28,6 +35,11 @@ interface ProblemListScreenProps {
 /** Browsing: cached problems first, refreshed in the background. Opening or filtering never touches the board (FR-008). */
 export function ProblemListScreen({
   container,
+  active,
+  downloaded,
+  search,
+  onChangeDownloaded: setDownloaded,
+  onChangeSearch: setSearch,
   selection,
   filters,
   onChangeFilters,
@@ -36,7 +48,14 @@ export function ProblemListScreen({
   onOpenBoard,
 }: ProblemListScreenProps) {
   const { colors } = useTheme();
-  const list = useProblemList(container.browser, selection, filters);
+  const labels = useConfigurationLabels(container.directory);
+  const [openFailed, setOpenFailed] = useState(false);
+  const list = useProblemList(
+    container.browser,
+    downloaded ? null : selection,
+    filters,
+    downloaded ? search : '',
+  );
   const snapshot = useBoardSnapshot(container.session);
   const filtered = filters.minDifficulty !== null || filters.maxDifficulty !== null || filters.minStars > 0;
   const notice = list.notice ? describeCatalogError(list.notice) : null;
@@ -44,7 +63,51 @@ export function ProblemListScreen({
   const header = (
     <View style={styles.header}>
       <ModeBanner mode={container.mode} persistent={container.persistent} />
-      {selection ? (
+      <View style={styles.modes}>
+        <Button
+          label="Board problems"
+          selected={!downloaded}
+          variant={!downloaded ? 'primary' : 'secondary'}
+          onPress={() => {
+            setDownloaded(false);
+            if (!selection) onChooseLayout();
+          }}
+        />
+        <Button
+          label="Downloaded"
+          selected={downloaded}
+          variant={downloaded ? 'primary' : 'secondary'}
+          onPress={() => setDownloaded(true)}
+        />
+      </View>
+      {downloaded ? (
+        <View style={{ gap: spacing.sm }}>
+          <AppText variant="bodyStrong">Search downloaded problems</AppText>
+          <TextInput
+            accessibilityLabel="Search downloaded problems"
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Problem name"
+            placeholderTextColor={colors.textMuted}
+            style={[
+              styles.search,
+              { color: colors.text, backgroundColor: colors.surface, borderColor: colors.controlBorder },
+            ]}
+          />
+          <AppText tone="muted" variant="caption">
+            All layouts you have browsed on this phone.
+          </AppText>
+          <Button label="Download another layout" onPress={onChooseLayout} />
+        </View>
+      ) : null}
+      {openFailed ? (
+        <Notice
+          tone="error"
+          title="Could not open that layout"
+          message="Choose the problem’s board layout and try again."
+        />
+      ) : null}
+      {selection && !downloaded ? (
         <Card style={styles.board}>
           <View style={styles.boardName}>
             <AppText variant="bodyStrong">{selection.boardName}</AppText>
@@ -56,7 +119,7 @@ export function ProblemListScreen({
           <Button label="Change layout" onPress={onChooseLayout} />
         </Card>
       ) : null}
-      {selection ? <FilterBar filters={filters} onChange={onChangeFilters} /> : null}
+      {selection || downloaded ? <FilterBar filters={filters} onChange={onChangeFilters} /> : null}
       {notice ? <Notice title={notice.title} message={notice.action} /> : null}
     </View>
   );
@@ -67,6 +130,25 @@ export function ProblemListScreen({
         <View style={styles.empty} accessibilityLiveRegion="polite">
           <ActivityIndicator color={colors.primary} />
           <AppText tone="muted">Loading problems…</AppText>
+          {container.mode === 'live' ? (
+            <AppText tone="muted" variant="caption" style={styles.centered}>
+              The first catalog download can be large. Keep the app open on Wi-Fi.
+            </AppText>
+          ) : null}
+        </View>
+      );
+    }
+    if (downloaded) {
+      return (
+        <View style={styles.empty}>
+          <AppText variant="title">
+            {search || filtered ? 'No downloaded problems match' : 'No downloaded problems yet'}
+          </AppText>
+          {search ? <Button label="Clear search" onPress={() => setSearch('')} /> : null}
+          {filtered ? (
+            <Button label="Clear filters" onPress={() => onChangeFilters(defaultProblemFilters)} />
+          ) : null}
+          <Button label="Choose a board layout" onPress={onChooseLayout} />
         </View>
       );
     }
@@ -101,11 +183,30 @@ export function ProblemListScreen({
   })();
 
   return (
-    <ScreenFrame title="Problems" headerRight={<ConnectionChip snapshot={snapshot} onPress={onOpenBoard} />}>
+    <ScreenFrame
+      active={active}
+      title="Problems"
+      headerRight={<ConnectionChip snapshot={snapshot} onPress={onOpenBoard} />}
+    >
       <FlatList
         data={list.items}
         keyExtractor={(problem) => problem.key}
-        renderItem={({ item }) => <ProblemRow problem={item} onPress={() => onOpenProblem(item)} />}
+        renderItem={({ item }) => (
+          <ProblemRow
+            problem={item}
+            {...(downloaded
+              ? {
+                  context:
+                    labels.get(`${item.manufacturer}/${item.configurationId}`) ??
+                    describeManufacturer(item.manufacturer),
+                }
+              : {})}
+            onPress={() => {
+              setOpenFailed(false);
+              void onOpenProblem(item).catch(() => setOpenFailed(true));
+            }}
+          />
+        )}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
         ListFooterComponent={list.loadingMore ? <ActivityIndicator color={colors.primary} /> : undefined}
@@ -114,7 +215,9 @@ export function ProblemListScreen({
         onEndReachedThreshold={0.5}
         onEndReached={() => void list.loadMore()}
         refreshControl={
-          selection ? <RefreshControl refreshing={false} onRefresh={() => void list.refresh()} /> : undefined
+          selection || downloaded ? (
+            <RefreshControl refreshing={false} onRefresh={() => void list.refresh()} />
+          ) : undefined
         }
       />
     </ScreenFrame>
@@ -126,6 +229,8 @@ function Separator() {
 }
 
 const styles = StyleSheet.create({
+  modes: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  search: { minHeight: 48, borderWidth: 1, borderRadius: 8, padding: spacing.md, fontSize: 16 },
   content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
   header: { gap: spacing.md, marginBottom: spacing.lg },
   board: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' },

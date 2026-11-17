@@ -4,6 +4,7 @@ import type { BoardSelection } from '@boardclimb/application';
 import { AppText, Notice, spacing } from '@boardclimb/design-system';
 import type { Problem, ProblemSummary } from '@boardclimb/domain';
 import type { AppContainer } from '../composition/AppContainer';
+import { BoardMap } from './BoardMap';
 import { HistoryCard } from './HistoryCard';
 import { HoldsCard } from './HoldsCard';
 import { LightUpPanel } from './LightUpPanel';
@@ -11,6 +12,8 @@ import { LogControls } from './LogControls';
 import { ScreenFrame } from './ScreenFrame';
 import { catalogErrorCode } from './presentation/catalogErrorCode';
 import { describeCatalogError } from './presentation/describeCatalogError';
+import { describeConfiguration } from './presentation/describeConfiguration';
+import { describeManufacturer } from './presentation/describeManufacturer';
 import { formatGrade } from './presentation/formatGrade';
 import { formatRating } from './presentation/formatRating';
 import { useBoardSnapshot } from './useBoardSnapshot';
@@ -62,7 +65,12 @@ export function ProblemDetailScreen({
         <View accessible accessibilityLabel={`Grade ${formatGrade(summary.grade)}, ${rating.spoken}`}>
           <AppText variant="display">{formatGrade(summary.grade)}</AppText>
           <AppText tone="muted">{rating.text}</AppText>
+          <AppText tone="muted" variant="caption">
+            {describeManufacturer(selection.configuration.manufacturer)} ·{' '}
+            {describeConfiguration(selection.configuration)}
+          </AppText>
         </View>
+        {problem?.setter ? <AppText tone="muted">Set by {problem.setter} · BoardSesh catalog</AppText> : null}
         <LightUpPanel
           problem={problem}
           snapshot={snapshot}
@@ -81,6 +89,7 @@ export function ProblemDetailScreen({
         />
         {failure ? <Notice tone="error" title={failure.title} message={failure.action} /> : null}
         {log.summary ? <HistoryCard days={log.summary.days} today={log.today} /> : null}
+        {problem ? <BoardMap problem={problem} /> : null}
         {problem ? <HoldsCard holds={problem.holds} /> : null}
       </ScrollView>
     </ScreenFrame>

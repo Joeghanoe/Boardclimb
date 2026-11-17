@@ -172,3 +172,9 @@ describe('problem detail helpers', () => {
     expect(describeMode('unverified')).toBeNull();
   });
 });
+
+it('FR-007 preserves the provider’s paired Font/V label instead of replacing its V grade', () => {
+  const grade = makeGrade('font', '6a/V2');
+  expect(grade.difficulty).toBe(makeGrade('font', '6A').difficulty);
+  expect(formatGrade(grade)).toBe('6a/V2');
+});

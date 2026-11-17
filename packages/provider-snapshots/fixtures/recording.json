@@ -1,0 +1,762 @@
+{
+  "recordedAt": "2026-11-17",
+  "upstreamRevision": "c788005578c3650e6684d68ca48988104d9eb32c",
+  "manifest": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/manifest.json",
+  "selection": "First 40 public, visible, single-frame climbs by UUID; all angle stats for those UUIDs; original SQLite DDL",
+  "entries": [
+    {
+      "boardType": "kilter",
+      "layoutId": 1,
+      "key": "board-snapshots/v1-gzip/kilter/1/2026-11-17T12-37-30-866Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/1/2026-11-17T12-37-30-866Z.db",
+      "bytes": 84415304,
+      "uncompressedBytes": 216772608,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T12:37:30.866Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 391181,
+          "watermarkUpdatedAt": "2026-11-17T12:29:18.581942Z",
+          "watermarkSyncSeq": "1909967"
+        },
+        "board_climb_stats": {
+          "rowCount": 381799,
+          "watermarkUpdatedAt": "2026-11-17T12:37:59.648439Z",
+          "watermarkSyncSeq": "501842193"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/kilter/1/2026-11-17T12-37-30-866Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/1/2026-11-17T12-37-30-866Z-grades.db",
+        "bytes": 17376278,
+        "uncompressedBytes": 47607808,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T12:37:30.866Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 365865,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "33466952"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "kilter",
+      "layoutId": 2,
+      "key": "board-snapshots/v1-gzip/kilter/2/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/2/2026-11-17T07-28-09-688Z.db",
+      "bytes": 24477,
+      "uncompressedBytes": 106496,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 162,
+          "watermarkUpdatedAt": "2026-08-25T21:11:40.076906Z",
+          "watermarkSyncSeq": "1134536"
+        },
+        "board_climb_stats": {
+          "rowCount": 155,
+          "watermarkUpdatedAt": "2026-11-16T18:39:55.109789Z",
+          "watermarkSyncSeq": "500319319"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/kilter/2/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/2/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 7296,
+        "uncompressedBytes": 36864,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 155,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "319814"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "kilter",
+      "layoutId": 3,
+      "key": "board-snapshots/v1-gzip/kilter/3/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/3/2026-11-17T07-28-09-688Z.db",
+      "bytes": 1323,
+      "uncompressedBytes": 20480,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 2,
+          "watermarkUpdatedAt": "2026-07-07T02:11:45.949735Z",
+          "watermarkSyncSeq": "86968"
+        },
+        "board_climb_stats": {
+          "rowCount": 0,
+          "watermarkUpdatedAt": "1970-01-01T00:00:00.000Z",
+          "watermarkSyncSeq": "0"
+        }
+      }
+    },
+    {
+      "boardType": "kilter",
+      "layoutId": 5,
+      "key": "board-snapshots/v1-gzip/kilter/5/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/5/2026-11-17T07-28-09-688Z.db",
+      "bytes": 98171,
+      "uncompressedBytes": 303104,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 637,
+          "watermarkUpdatedAt": "2026-07-08T10:07:56.201781Z",
+          "watermarkSyncSeq": "883924"
+        },
+        "board_climb_stats": {
+          "rowCount": 462,
+          "watermarkUpdatedAt": "2026-11-10T00:29:04.687843Z",
+          "watermarkSyncSeq": "486754886"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/kilter/5/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/5/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 21943,
+        "uncompressedBytes": 73728,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 443,
+            "watermarkUpdatedAt": "2026-11-10T06:39:00.660723Z",
+            "watermarkSyncSeq": "107009"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "kilter",
+      "layoutId": 6,
+      "key": "board-snapshots/v1-gzip/kilter/6/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/6/2026-11-17T07-28-09-688Z.db",
+      "bytes": 2590,
+      "uncompressedBytes": 24576,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 6,
+          "watermarkUpdatedAt": "2026-07-08T09:22:10.006519Z",
+          "watermarkSyncSeq": "876687"
+        },
+        "board_climb_stats": {
+          "rowCount": 2,
+          "watermarkUpdatedAt": "2026-07-08T10:32:58.506776Z",
+          "watermarkSyncSeq": "5414888"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/kilter/6/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/6/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 855,
+        "uncompressedBytes": 16384,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 2,
+            "watermarkUpdatedAt": "2026-07-07T20:19:22.446876Z",
+            "watermarkSyncSeq": "135381"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "kilter",
+      "layoutId": 7,
+      "key": "board-snapshots/v1-gzip/kilter/7/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/7/2026-11-17T07-28-09-688Z.db",
+      "bytes": 3219,
+      "uncompressedBytes": 28672,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 12,
+          "watermarkUpdatedAt": "2026-07-08T09:22:10.006519Z",
+          "watermarkSyncSeq": "881110"
+        },
+        "board_climb_stats": {
+          "rowCount": 11,
+          "watermarkUpdatedAt": "2026-07-08T10:32:58.506776Z",
+          "watermarkSyncSeq": "5631211"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/kilter/7/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/7/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 1344,
+        "uncompressedBytes": 16384,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 11,
+            "watermarkUpdatedAt": "2026-07-07T20:21:16.722368Z",
+            "watermarkSyncSeq": "315804"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "kilter",
+      "layoutId": 8,
+      "key": "board-snapshots/v1-gzip/kilter/8/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/8/2026-11-17T07-28-09-688Z.db",
+      "bytes": 8156380,
+      "uncompressedBytes": 22016000,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 34643,
+          "watermarkUpdatedAt": "2026-11-17T06:42:48.684843Z",
+          "watermarkSyncSeq": "1909799"
+        },
+        "board_climb_stats": {
+          "rowCount": 52601,
+          "watermarkUpdatedAt": "2026-11-17T07:30:35.393337Z",
+          "watermarkSyncSeq": "501558622"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/kilter/8/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/8/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 2402189,
+        "uncompressedBytes": 6701056,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 51527,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "33466912"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "moonboard",
+      "layoutId": 1,
+      "key": "board-snapshots/v1-gzip/moonboard/1/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/1/2026-11-17T07-28-09-688Z.db",
+      "bytes": 19509,
+      "uncompressedBytes": 73728,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 128,
+          "watermarkUpdatedAt": "2026-09-07T04:18:11.981338Z",
+          "watermarkSyncSeq": "1785543"
+        },
+        "board_climb_stats": {
+          "rowCount": 129,
+          "watermarkUpdatedAt": "2026-10-01T10:59:29.494367Z",
+          "watermarkSyncSeq": "394835687"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/moonboard/1/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/1/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 18881,
+        "uncompressedBytes": 200704,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 1245,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "1880589"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "moonboard",
+      "layoutId": 2,
+      "key": "board-snapshots/v1-gzip/moonboard/2/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/2/2026-11-17T07-28-09-688Z.db",
+      "bytes": 12763988,
+      "uncompressedBytes": 36360192,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 95640,
+          "watermarkUpdatedAt": "2026-09-08T21:10:36.124909Z",
+          "watermarkSyncSeq": "1795230"
+        },
+        "board_climb_stats": {
+          "rowCount": 95563,
+          "watermarkUpdatedAt": "2026-11-17T05:29:37.212654Z",
+          "watermarkSyncSeq": "501024385"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/moonboard/2/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/2/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 13420178,
+        "uncompressedBytes": 161558528,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 1102815,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "1901265"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "moonboard",
+      "layoutId": 3,
+      "key": "board-snapshots/v1-gzip/moonboard/3/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/3/2026-11-17T07-28-09-688Z.db",
+      "bytes": 6573293,
+      "uncompressedBytes": 17534976,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 43217,
+          "watermarkUpdatedAt": "2026-09-07T04:20:09.921601Z",
+          "watermarkSyncSeq": "1789390"
+        },
+        "board_climb_stats": {
+          "rowCount": 43298,
+          "watermarkUpdatedAt": "2026-11-17T06:39:42.548066Z",
+          "watermarkSyncSeq": "501338252"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/moonboard/3/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/3/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 5233529,
+        "uncompressedBytes": 60588032,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 413489,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "33467655"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "moonboard",
+      "layoutId": 4,
+      "key": "board-snapshots/v1-gzip/moonboard/4/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/4/2026-11-17T07-28-09-688Z.db",
+      "bytes": 10023303,
+      "uncompressedBytes": 29245440,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 75654,
+          "watermarkUpdatedAt": "2026-09-08T21:10:36.124909Z",
+          "watermarkSyncSeq": "1795231"
+        },
+        "board_climb_stats": {
+          "rowCount": 75426,
+          "watermarkUpdatedAt": "2026-11-17T07:32:37.780532Z",
+          "watermarkSyncSeq": "501558630"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/moonboard/4/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/4/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 11865216,
+        "uncompressedBytes": 136843264,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 934065,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "1902477"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "moonboard",
+      "layoutId": 5,
+      "key": "board-snapshots/v1-gzip/moonboard/5/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/5/2026-11-17T07-28-09-688Z.db",
+      "bytes": 8684620,
+      "uncompressedBytes": 24035328,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 59586,
+          "watermarkUpdatedAt": "2026-09-08T21:10:36.124909Z",
+          "watermarkSyncSeq": "1795227"
+        },
+        "board_climb_stats": {
+          "rowCount": 59602,
+          "watermarkUpdatedAt": "2026-11-17T06:29:28.288518Z",
+          "watermarkSyncSeq": "501027244"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/moonboard/5/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/5/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 8815798,
+        "uncompressedBytes": 101888000,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 695445,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "1902433"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "moonboard",
+      "layoutId": 6,
+      "key": "board-snapshots/v1-gzip/moonboard/6/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/6/2026-11-17T07-28-09-688Z.db",
+      "bytes": 1118139,
+      "uncompressedBytes": 3112960,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 8009,
+          "watermarkUpdatedAt": "2026-09-08T21:10:36.124909Z",
+          "watermarkSyncSeq": "1794713"
+        },
+        "board_climb_stats": {
+          "rowCount": 8068,
+          "watermarkUpdatedAt": "2026-11-14T14:39:13.338986Z",
+          "watermarkSyncSeq": "495712459"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/moonboard/6/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/6/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 1439855,
+        "uncompressedBytes": 16334848,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 111375,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "1902462"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "moonboard",
+      "layoutId": 7,
+      "key": "board-snapshots/v1-gzip/moonboard/7/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/7/2026-11-17T07-28-09-688Z.db",
+      "bytes": 824030,
+      "uncompressedBytes": 2195456,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 5245,
+          "watermarkUpdatedAt": "2026-09-07T04:20:09.921601Z",
+          "watermarkSyncSeq": "1789383"
+        },
+        "board_climb_stats": {
+          "rowCount": 5261,
+          "watermarkUpdatedAt": "2026-11-16T17:01:03.97663Z",
+          "watermarkSyncSeq": "499949324"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/moonboard/7/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/moonboard/7/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 948889,
+        "uncompressedBytes": 10838016,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 73846,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "1902388"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "tension",
+      "layoutId": 9,
+      "key": "board-snapshots/v1-gzip/tension/9/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/tension/9/2026-11-17T07-28-09-688Z.db",
+      "bytes": 11566966,
+      "uncompressedBytes": 33030144,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 73072,
+          "watermarkUpdatedAt": "2026-11-17T06:13:17.909718Z",
+          "watermarkSyncSeq": "1909574"
+        },
+        "board_climb_stats": {
+          "rowCount": 80233,
+          "watermarkUpdatedAt": "2026-11-17T07:09:15.625934Z",
+          "watermarkSyncSeq": "501443395"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/tension/9/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/tension/9/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 3223357,
+        "uncompressedBytes": 10407936,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 78684,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "33467441"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "tension",
+      "layoutId": 10,
+      "key": "board-snapshots/v1-gzip/tension/10/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/tension/10/2026-11-17T07-28-09-688Z.db",
+      "bytes": 9527024,
+      "uncompressedBytes": 26419200,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 58622,
+          "watermarkUpdatedAt": "2026-11-17T07:09:15.625934Z",
+          "watermarkSyncSeq": "1909822"
+        },
+        "board_climb_stats": {
+          "rowCount": 60796,
+          "watermarkUpdatedAt": "2026-11-17T07:38:40.051966Z",
+          "watermarkSyncSeq": "501558655"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/tension/10/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/tension/10/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 2507193,
+        "uncompressedBytes": 7819264,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 59164,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "33467475"
+          }
+        }
+      }
+    },
+    {
+      "boardType": "tension",
+      "layoutId": 11,
+      "key": "board-snapshots/v1-gzip/tension/11/2026-11-17T07-28-09-688Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/tension/11/2026-11-17T07-28-09-688Z.db",
+      "bytes": 6089153,
+      "uncompressedBytes": 16580608,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:28:09.688Z",
+      "schemaVersion": 14,
+      "privacyVersion": 1,
+      "artifactShape": 2,
+      "tables": {
+        "board_climbs": {
+          "rowCount": 35253,
+          "watermarkUpdatedAt": "2026-11-17T07:09:15.625934Z",
+          "watermarkSyncSeq": "1909820"
+        },
+        "board_climb_stats": {
+          "rowCount": 42210,
+          "watermarkUpdatedAt": "2026-11-17T07:09:15.625934Z",
+          "watermarkSyncSeq": "501443399"
+        }
+      },
+      "grades": {
+        "key": "board-snapshots/v1-gzip/tension/11/2026-11-17T07-28-09-688Z-grades.db",
+        "url": "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/tension/11/2026-11-17T07-28-09-688Z-grades.db",
+        "bytes": 1814405,
+        "uncompressedBytes": 5468160,
+        "contentEncoding": "gzip",
+        "builtAt": "2026-11-17T07:28:09.688Z",
+        "schemaVersion": 14,
+        "privacyVersion": 1,
+        "tables": {
+          "board_climb_grades": {
+            "rowCount": 41235,
+            "watermarkUpdatedAt": "2026-11-17T06:35:00.049546Z",
+            "watermarkSyncSeq": "33467488"
+          }
+        }
+      }
+    }
+  ],
+  "hardwareManifest": {
+    "formatVersion": 1,
+    "generatedAt": "2026-11-17T07:44:43.146Z",
+    "artifact": {
+      "key": "board-snapshots/v1-catalog/2026-11-17T07-41-42-158Z.db",
+      "url": "https://snapshots.boardsesh.com/board-snapshots/v1-catalog/2026-11-17T07-41-42-158Z.db",
+      "bytes": 35645424,
+      "uncompressedBytes": 194244608,
+      "contentEncoding": "gzip",
+      "builtAt": "2026-11-17T07:41:42.158Z",
+      "schemaVersion": 1,
+      "tables": {
+        "board_products": {
+          "rowCount": 14
+        },
+        "board_layouts": {
+          "rowCount": 23
+        },
+        "board_product_sizes": {
+          "rowCount": 44
+        },
+        "board_sets": {
+          "rowCount": 78
+        },
+        "board_placement_roles": {
+          "rowCount": 54
+        },
+        "board_holes": {
+          "rowCount": 6813
+        },
+        "board_placements": {
+          "rowCount": 8968
+        },
+        "board_leds": {
+          "rowCount": 16383
+        },
+        "board_product_sizes_layouts_sets": {
+          "rowCount": 159
+        },
+        "board_kits": {
+          "rowCount": 139
+        },
+        "board_difficulty_grades": {
+          "rowCount": 275
+        },
+        "board_attempts": {
+          "rowCount": 230
+        },
+        "board_climb_aliases": {
+          "rowCount": 1037384
+        },
+        "board_beta_links": {
+          "rowCount": 94764
+        }
+      }
+    }
+  }
+}

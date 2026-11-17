@@ -32,6 +32,8 @@ interface Link {
 export class TransportBoardController implements BoardController {
   readonly manufacturer: Manufacturer;
   private link: Link | null = null;
+  private connectionEpoch = 0;
+  private connecting: Promise<void> = Promise.resolve();
   private readonly listeners = new Set<() => void>();
 
   constructor(private readonly options: TransportBoardControllerOptions) {
@@ -83,20 +85,34 @@ export class TransportBoardController implements BoardController {
     if (configuration.manufacturer !== this.manufacturer || target.manufacturer !== this.manufacturer) {
       return this.failed('unsupported_configuration', 'That configuration belongs to a different board.');
     }
-    return this.open({ target, configuration });
+    return this.enqueueConnection({ target, configuration });
   }
 
   reconnect(): Promise<ConnectionResult> {
-    const previous = this.lastLink;
-    if (!previous) {
+    if (!this.lastLink)
       return Promise.resolve(this.failed('not_connected', 'There is no board to reconnect to.'));
-    }
-    return this.open(previous);
+    return this.enqueueConnection(this.lastLink);
+  }
+
+  private enqueueConnection(link: Link): Promise<ConnectionResult> {
+    const epoch = ++this.connectionEpoch;
+    const work = this.connecting.then(async () => {
+      if (epoch !== this.connectionEpoch) return this.failed('not_connected', 'The selected board changed.');
+      const old = this.link;
+      this.link = null;
+      if (old) await this.options.transport.disconnect(old.target.id);
+      return this.open(link, epoch);
+    });
+    this.connecting = work.then(
+      () => undefined,
+      () => undefined,
+    );
+    return work;
   }
 
   private lastLink: Link | null = null;
 
-  private async open(link: Link): Promise<ConnectionResult> {
+  private async open(link: Link, epoch: number): Promise<ConnectionResult> {
     const { transport } = this.options;
     if ((await transport.requestPermission()) === 'denied') {
       return this.failed('bluetooth_permission_denied', 'Bluetooth permission is needed to connect.');
@@ -106,9 +122,14 @@ export class TransportBoardController implements BoardController {
     }
     let result: TransportConnectResult;
     try {
+      if (epoch !== this.connectionEpoch) return this.failed('not_connected', 'The selected board changed.');
       result = await transport.connect(link.target.id);
     } catch {
       result = { ok: false, reason: 'failed' };
+    }
+    if (epoch !== this.connectionEpoch) {
+      if (result.ok) await transport.disconnect(link.target.id);
+      return this.failed('not_connected', 'The selected board changed.');
     }
     if (!result.ok) return this.failedConnect(result.reason);
     this.link = link;
@@ -127,20 +148,36 @@ export class TransportBoardController implements BoardController {
     return this.failed('connection_failed', 'Could not connect to the board.');
   }
 
-  async lightUp(problem: Problem): Promise<LightCommandResult> {
+  private commands: Promise<void> = Promise.resolve();
+
+  lightUp(problem: Problem): Promise<LightCommandResult> {
+    const requested = this.link;
+    const result = this.commands.then(() => this.send(problem, requested));
+    this.commands = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  }
+
+  private async send(problem: Problem, requested: Link | null): Promise<LightCommandResult> {
     const link = this.link;
+    if (link !== requested)
+      return this.failed('not_connected', 'The selected board changed. Tap Light up again.');
     if (!link) return this.failed('not_connected', 'Connect to a board first.');
     if (problem.manufacturer !== this.manufacturer || problem.configurationId !== link.configuration.id) {
       return this.failed('unsupported_configuration', 'This problem is for a different board layout.');
     }
-    const frames = this.options.encoder.encode(problem, link.configuration);
-    if (!frames) {
+    const frames = this.options.encoder.encode(problem, link.configuration, link.target.name);
+    if (!frames || frames.length === 0 || frames.some((frame) => frame.length === 0)) {
       return this.failed(
         'protocol_unverified',
         `Lighting ${this.manufacturer} boards has not been verified yet.`,
       );
     }
     for (const frame of frames) {
+      if (this.link !== link)
+        return this.failed('not_connected', 'The board disconnected. Tap Light up after reconnecting.');
       if (!(await this.write(link.target.id, frame))) {
         return this.failed('command_rejected', 'The board did not accept the command.');
       }
@@ -157,6 +194,7 @@ export class TransportBoardController implements BoardController {
   }
 
   async disconnect(): Promise<void> {
+    this.connectionEpoch += 1;
     const link = this.link;
     this.link = null;
     this.lastLink = null;

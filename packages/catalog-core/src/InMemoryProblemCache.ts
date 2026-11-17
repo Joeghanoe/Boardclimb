@@ -24,7 +24,8 @@ export class InMemoryProblemCache implements ProblemCache {
     let last: number | null = null;
     const ordered = [...this.rows.values()].sort((a, b) => a.seq - b.seq);
     for (const row of ordered) {
-      if (row.configKey !== query.configKey) continue;
+      if (query.configKey !== null && row.configKey !== query.configKey) continue;
+      if (query.search && !row.summary.name.toLowerCase().includes(query.search.toLowerCase())) continue;
       if (query.after !== null && row.seq <= query.after) continue;
       if (!matchesProblemFilters(row.summary, query.filters, query.providerHasRatings)) continue;
       items.push(row.summary);

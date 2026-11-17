@@ -3,7 +3,7 @@ import { describeMode } from './presentation/describeMode';
 import { describePersistence } from './presentation/describePersistence';
 
 interface ModeBannerProps {
-  mode: 'sample' | 'unverified';
+  mode: 'sample' | 'unverified' | 'live';
   persistent: boolean;
 }
 

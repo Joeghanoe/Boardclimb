@@ -20,6 +20,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
     <Card>
       <Button
         label={open ? 'Hide filters' : `Filters: ${summary}`}
+        expanded={open}
         accessibilityHint={open ? 'Hides the grade and rating filters' : 'Shows the grade and rating filters'}
         onPress={() => setOpen((current) => !current)}
       />

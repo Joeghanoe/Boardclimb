@@ -6,3 +6,6 @@ artifacts
 REPORT.md
 docs/adr/ADR-0001-*.md
 docs/adr/ADR-0002-*.md
+
+# Recorded, compact public hardware metadata (no art or user data).
+packages/provider-snapshots/data/hardware.json

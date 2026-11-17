@@ -3,10 +3,10 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import type { BoardSelection, DirectoryEntry } from '@boardclimb/application';
 import { AppText, Button, Card, Notice, spacing, useTheme } from '@boardclimb/design-system';
 import type { AppContainer } from '../composition/AppContainer';
+import { ConfigurationChooser } from './ConfigurationChooser';
 import { ModeBanner } from './ModeBanner';
 import { ScreenFrame } from './ScreenFrame';
 import { describeCatalogError } from './presentation/describeCatalogError';
-import { describeConfiguration } from './presentation/describeConfiguration';
 import { describeManufacturer } from './presentation/describeManufacturer';
 
 interface LayoutScreenProps {
@@ -19,6 +19,7 @@ interface LayoutScreenProps {
 /** Board-first route: pick a manufacturer's board and layout. One manufacturer failing never hides the others (FR-001, FR-004). */
 export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScreenProps) {
   const { colors } = useTheme();
+  const [boardKey, setBoardKey] = useState<string | null>(null);
   const [entries, setEntries] = useState<DirectoryEntry[] | null>(null);
 
   useEffect(() => {
@@ -42,19 +43,36 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
               {describeManufacturer(entry.manufacturer)}
             </AppText>
             {entry.ok ? (
-              entry.boards.map(({ board, configurations }) => (
-                <View key={board.id} style={styles.board}>
-                  <AppText variant="bodyStrong">{board.name}</AppText>
-                  {configurations.map((configuration) => (
+              entry.boards.map(({ board, configurations }) => {
+                const key = `${entry.manufacturer}-${board.id}`;
+                const selected = boardKey === key;
+                return (
+                  <View key={board.id} style={styles.board}>
                     <Button
-                      key={configuration.id}
-                      label={describeConfiguration(configuration)}
-                      variant={current?.configuration.id === configuration.id ? 'primary' : 'secondary'}
-                      onPress={() => onChoose({ boardName: board.name, configuration })}
+                      label={board.name}
+                      expanded={selected}
+                      variant={selected ? 'primary' : 'secondary'}
+                      onPress={() => {
+                        setBoardKey(selected ? null : key);
+                      }}
                     />
-                  ))}
-                </View>
-              ))
+                    {selected ? (
+                      <>
+                        <AppText variant="bodyStrong">Layout and size</AppText>
+                        <ConfigurationChooser
+                          configurations={configurations}
+                          selectedId={
+                            current?.configuration.manufacturer === board.manufacturer
+                              ? current.configuration.id
+                              : null
+                          }
+                          onChoose={(configuration) => onChoose({ boardName: board.name, configuration })}
+                        />
+                      </>
+                    ) : null}
+                  </View>
+                );
+              })
             ) : (
               <Notice
                 title={describeCatalogError(entry.code).title}

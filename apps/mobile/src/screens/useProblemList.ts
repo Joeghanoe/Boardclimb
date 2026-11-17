@@ -41,6 +41,7 @@ export function useProblemList(
   browser: ProblemBrowser,
   selection: BoardSelection | null,
   filters: ProblemFilters,
+  search = '',
 ) {
   const [state, setState] = useState<ListState>(EMPTY);
   const [reloads, setReloads] = useState(0);
@@ -51,10 +52,6 @@ export function useProblemList(
 
   useEffect(() => {
     generation.current += 1;
-    if (!configuration) {
-      setState(EMPTY);
-      return;
-    }
     const mine = generation.current;
     const current = { minDifficulty, maxDifficulty, minStars };
     const revalidate = !skipRevalidate.current;
@@ -64,10 +61,12 @@ export function useProblemList(
     setState((previous) => ({ ...previous, loading: true }));
     (async () => {
       try {
-        const page = await browser.browse(configuration, current, null);
+        const page = configuration
+          ? await browser.browse(configuration, current, null)
+          : await browser.browseDownloaded(current, null, search);
         if (!alive()) return;
         setState(fromPage(page));
-        if (!revalidate || page.freshness !== 'cached') return;
+        if (!configuration || !revalidate || page.freshness !== 'cached') return;
         const result = await browser.refresh(configuration);
         if (!alive()) return;
         if (!result.ok) {
@@ -80,18 +79,20 @@ export function useProblemList(
         if (alive()) setState({ ...EMPTY, notice: catalogErrorCode(error) });
       }
     })();
-  }, [browser, configuration, minDifficulty, maxDifficulty, minStars, reloads]);
+    return () => {
+      generation.current += 1;
+    };
+  }, [browser, configuration, minDifficulty, maxDifficulty, minStars, reloads, search]);
 
   const loadMore = useCallback(async () => {
-    if (!configuration || state.loading || state.loadingMore || !state.hasMore) return;
+    if (state.loading || state.loadingMore || !state.hasMore) return;
     const mine = generation.current;
     setState((previous) => ({ ...previous, loadingMore: true }));
     try {
-      const page = await browser.browse(
-        configuration,
-        { minDifficulty, maxDifficulty, minStars },
-        state.next,
-      );
+      const current = { minDifficulty, maxDifficulty, minStars };
+      const page = configuration
+        ? await browser.browse(configuration, current, state.next)
+        : await browser.browseDownloaded(current, state.next, search);
       if (generation.current !== mine) return;
       setState((previous) => {
         const known = new Set(previous.items.map((item) => item.key));
@@ -108,12 +109,11 @@ export function useProblemList(
       if (generation.current === mine)
         setState((previous) => ({ ...previous, loadingMore: false, notice: catalogErrorCode(error) }));
     }
-  }, [browser, configuration, minDifficulty, maxDifficulty, minStars, state]);
+  }, [browser, configuration, minDifficulty, maxDifficulty, minStars, state, search]);
 
   /** Pull to refresh: ask the provider again, then read the list once more without a second revalidation. */
   const refresh = useCallback(async () => {
-    if (!configuration) return;
-    await browser.refresh(configuration);
+    if (configuration) await browser.refresh(configuration);
     skipRevalidate.current = true;
     setReloads((count) => count + 1);
   }, [browser, configuration]);

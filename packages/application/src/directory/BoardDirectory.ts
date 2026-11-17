@@ -1,5 +1,7 @@
 import { CatalogError } from '@boardclimb/catalog-core';
 import { MANUFACTURERS } from '@boardclimb/domain';
+import type { ProblemSummary } from '@boardclimb/domain';
+import type { BoardSelection } from '../ports/BoardSelection';
 import type { CatalogLookup } from '../browse/CatalogLookup';
 import type { BoardWithConfigurations } from './BoardWithConfigurations';
 import type { DirectoryEntry } from './DirectoryEntry';
@@ -10,6 +12,18 @@ export class BoardDirectory {
 
   list(): Promise<DirectoryEntry[]> {
     return Promise.all(MANUFACTURERS.map((manufacturer) => this.listOne(manufacturer)));
+  }
+
+  /** Resolve a downloaded problem's saved configuration without requiring a physical board. */
+  async selectionFor(problem: ProblemSummary): Promise<BoardSelection> {
+    const catalog = this.catalogs(problem.manufacturer);
+    for (const board of await catalog.listBoards()) {
+      const configuration = (await catalog.getConfigurations(board.id)).find(
+        (c) => c.id === problem.configurationId,
+      );
+      if (configuration) return { boardName: board.name, configuration };
+    }
+    throw new CatalogError('not_found', 'Choose the problem’s layout again.');
   }
 
   private async listOne(manufacturer: DirectoryEntry['manufacturer']): Promise<DirectoryEntry> {

@@ -30,6 +30,8 @@ const IDLE: BoardSessionSnapshot = {
 export class BoardSession {
   private state: BoardSessionSnapshot = IDLE;
   private active: BoardController | null = null;
+  private connectionEpoch = 0;
+  private connecting: Promise<void> = Promise.resolve();
   private stopListening: (() => void) | null = null;
   private readonly listeners = new Set<() => void>();
 
@@ -59,21 +61,56 @@ export class BoardSession {
     }
   }
 
-  async connect(target: DiscoveredBoard, configuration: BoardConfiguration): Promise<ConnectionResult> {
-    const controller = this.controllers(target.manufacturer);
-    if (this.active && this.active !== controller) await this.disconnect();
-    this.attach(controller);
-    this.update({ board: target, configuration });
-    return this.open(controller, () => controller.connect(target, configuration));
+  connect(target: DiscoveredBoard, configuration: BoardConfiguration): Promise<ConnectionResult> {
+    const epoch = ++this.connectionEpoch;
+    // Invalidate the previous controller immediately, even if its native connect is still pending.
+    const previous = this.active;
+    this.stopListening?.();
+    this.stopListening = null;
+    this.active = null;
+    const stopped = previous?.disconnect() ?? Promise.resolve();
+    this.update({
+      board: target,
+      configuration,
+      connection: 'connecting',
+      error: null,
+      command: { state: 'idle' },
+    });
+    const work = this.connecting.then(async () => {
+      await stopped;
+      if (epoch !== this.connectionEpoch)
+        return { ok: false, code: 'not_connected', message: 'The selected board changed.' } as const;
+      const controller = this.controllers(target.manufacturer);
+      this.attach(controller);
+      return this.open(controller, () => controller.connect(target, configuration), epoch);
+    });
+    this.connecting = work.then(
+      () => undefined,
+      () => undefined,
+    );
+    return work;
   }
 
-  /** Reconnects to the last board when the link was lost. Sends no LED command (FR-017). */
-  async reconnect(): Promise<ConnectionResult> {
+  /** Reconnects only the last explicit selection; never resends LEDs. */
+  reconnect(): Promise<ConnectionResult> {
     const controller = this.active;
-    if (!controller) {
-      return { ok: false, code: 'not_connected', message: 'There is no board to reconnect to.' };
-    }
-    return this.open(controller, () => controller.reconnect());
+    if (!controller)
+      return Promise.resolve({
+        ok: false,
+        code: 'not_connected',
+        message: 'There is no board to reconnect to.',
+      });
+    const epoch = this.connectionEpoch;
+    const work = this.connecting.then(() => {
+      if (epoch !== this.connectionEpoch)
+        return { ok: false, code: 'not_connected', message: 'The selected board changed.' } as const;
+      return this.open(controller, () => controller.reconnect(), epoch);
+    });
+    this.connecting = work.then(
+      () => undefined,
+      () => undefined,
+    );
+    return work;
   }
 
   /** App returned to the foreground: reconnect if the link dropped. Never relights a previous problem. */
@@ -92,7 +129,10 @@ export class BoardSession {
     }
     this.update({ command: { state: 'pending', problemKey: problem.key } });
     const started = this.clock.now().getTime();
+    const epoch = this.connectionEpoch;
     const result = await controller.lightUp(problem);
+    if (epoch !== this.connectionEpoch)
+      return { ok: false, code: 'not_connected', message: 'The selected board changed. Tap Light up again.' };
     const at = this.clock.now().toISOString();
     this.diagnostics.emit({
       name: 'board.command_result',
@@ -110,12 +150,17 @@ export class BoardSession {
   }
 
   async disconnect(): Promise<void> {
+    const epoch = ++this.connectionEpoch;
     const controller = this.active;
     this.stopListening?.();
     this.stopListening = null;
     this.active = null;
     if (controller) await controller.disconnect();
-    this.update({ ...IDLE, command: this.state.command });
+    if (epoch === this.connectionEpoch)
+      this.update({
+        ...IDLE,
+        command: this.state.command.state === 'pending' ? { state: 'idle' } : this.state.command,
+      });
   }
 
   private attach(controller: BoardController): void {
@@ -128,10 +173,13 @@ export class BoardSession {
   private async open(
     controller: BoardController,
     attempt: () => Promise<ConnectionResult>,
+    epoch: number,
   ): Promise<ConnectionResult> {
     this.transition('connecting', null, controller.manufacturer);
     const started = this.clock.now().getTime();
     const result = await attempt();
+    if (epoch !== this.connectionEpoch)
+      return { ok: false, code: 'not_connected', message: 'The selected board changed.' };
     if (result.ok) {
       this.update({ capabilities: result.capabilities });
       this.transition('connected', null, controller.manufacturer, started);

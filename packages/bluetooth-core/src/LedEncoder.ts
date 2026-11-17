@@ -5,5 +5,9 @@ import type { BoardConfiguration, Problem } from '@boardclimb/domain';
  * ends with a physical-board test (ADR-0002 section 7). Returns null when no verified encoding exists.
  */
 export interface LedEncoder {
-  encode(problem: Problem, configuration: BoardConfiguration): Uint8Array[] | null;
+  encode(
+    problem: Problem,
+    configuration: BoardConfiguration,
+    deviceName?: string | null,
+  ): Uint8Array[] | null;
 }

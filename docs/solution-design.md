@@ -53,10 +53,19 @@ Dependencies point inward (CODE.8): `domain` imports nothing; `catalog-core`, `b
 | `bluetooth-core`                                         | `BoardController` contract, connection and command state machines, error codes, capability model                                                                                                                                                                       | domain, `BleTransport` port          |
 | `board-kilter`, `board-moonboard`, `board-tension`       | Per-manufacturer controller: discovery filter, configuration detection, hold-to-LED encoding                                                                                                                                                                           | `BleTransport` port                  |
 | `storage-local`                                          | SQLite schema, forward-only migrations, `SqlLogStore`, `SqlProblemCache`, `SqlSettingsStore` over a `SqlDatabase` port                                                                                                                                                 | application ports                    |
+| `provider-snapshots`                                     | Public snapshot schema adapter for all three manufacturers, pinned factual hardware metadata, UUID pagination and safe complete hold mapping                                                                                                                           | domain, catalog-core                 |
+| `protocol-aurora`                                        | Reference-derived Aurora v2/v3 encoder shared by Kilter and Tension                                                                                                                                                                                                    | domain, bluetooth-core               |
 | `design-system`                                          | Replaceable tokens (light/dark, states, type, spacing, radii, touch size) and primitives (`AppText`, `Button`, `Chip`, `Notice`, `Card`, `Stepper`, `ToggleButton`) that read the active theme                                                                         | nothing                              |
 | `apps/mobile`                                            | A screen stack (problem list, problem detail, board layout, boards, diagnostics), hooks that call use cases, tested presentation models (error wording, grade and rating text, command status), composition root that builds concrete adapters                         | everything, only in `composition/`   |
 
-**Real versus stand-in.** Real here: the domain rules, storage (tested against real SQLite through Bun's built-in `bun:sqlite`; the device driver `expo-sqlite` implements the same `SqlDatabase` port), the catalog cache policy, the connection state machines. Stand-ins: the three `ProviderSource` implementations and the three `BleTransport` implementations used by the vertical slice are _sample_ sources and a _scripted_ transport, labelled as such in code and UI. Per ADR-0002 section 7 no vendor endpoint, UUID or byte layout is written until independently verified; the adapters return `provider_unverified` / `protocol_unverified` for anything that would need them. Each adapter's T.6 test (a recorded real response, or a physical board) is therefore an **open spike**, listed in Known limits; the fixture contract tests prove the shared contract, not the vendor.
+**Real versus stand-in.** Native builds now compose public BoardSesh snapshot sources and
+`NativeBleTransport` (`react-native-ble-plx`). The web preview remains explicitly sample
+mode, with synthetic catalogs, geometry and a scripted transport. The reference-derived
+encoders and recorded-response contracts do not establish physical compatibility.
+ADR-0005 records source selection, exact revision, permissions and remaining evidence.
+Catalog metadata is bundled, so native board/layout selection works offline. Downloaded
+problem-first browsing searches cached problems across all previously browsed layouts;
+it does not search unseen remote catalogs.
 
 ## Data flow and stored layout
 
@@ -130,13 +139,30 @@ Untrusted: every provider response (validated into domain types at the adapter e
 
 ## Known limits
 
-- **Vendor access is unverified.** A1, A2, A3, A4, A5 (ADR-0002 section 5) are open. The three catalog `ProviderSource` and three `BleTransport` implementations for real vendors do not exist yet; each is a spike that must end with a recorded real response or a physical-board test (T.6) before the adapter is called done. The app currently runs on clearly labelled sample data and a scripted transport.
-- The grade conversion table (Font to V) is the common community table; it is shown as converted, with the published grade always visible. Providers using other systems return `difficulty: null` and are excluded from range filtering with a visible notice.
-- Flash after failed attempts: the domain refuses unless the caller passes `acknowledgeContradiction`; the ADR table accepts this state, so the UI asks. Usability of that prompt is untested (ADR-0001 section 10).
-- Backup and restore (A9), TopLogger integration (A6), a versioned export or import contract, minimum OS versions, latency measurements on real devices (NFR-001, NFR-002) and a licensing inventory are not implemented or measured.
-- Screens have been checked in a browser rendering of the React Native app only; real iOS and Android devices were not available to this change.
-- Board and layout lists (`BoardDirectory`) are not cached; only the chosen layout (saved whole in settings) and problems are. Offline, a climber can browse the saved layout but not pick a new one.
-- Problem-first browsing shows the saved layout's problems (change layout from the problem list); a merged search across all manufacturers is not built. Hold geometry is unknown to the app, so the detail screen lists holds by role instead of drawing a board.
-- The development baseline is now Ubuntu on WSL2 with Node 24.22.3 and stable Bun 1.4.4. Frozen installation and the full project/harness gates passed there on 2026-11-17. This resolves the previous Node 24.2 / canary Bun toolchain limit. No hosted CI run has been performed; `docs/ci-proposal.md` remains an inactive proposal for human review.
-- Screens are verified by rendering the app with react-native-web and screenshotting at 320, 390, 768 and 1280 px in light and dark, with the harness's automated responsive and WCAG checks (no findings at the last run; axe-core was not installed). The wording, state and decision logic lives in pure presentation models that `bun test` covers; the screens and hooks themselves have no automated tests, and no independent UX review (verify-frontend playbook) has been run.
-- The browser preview keeps records in memory and says so on screen (`persistent: false`); only a phone build writes to SQLite. The web build loads `createDeviceContainer.web.ts` so `expo-sqlite` is not bundled. Device behaviour (safe areas, Android back button, long-press on Add attempt, text scaling) is untested.
+- Physical Kilter, MoonBoard and Tension behaviour is unverified. Firmware capabilities,
+  multi-phone contention/takeover, lock/reconnect, latency and actual light patterns need
+  the iPhone gym run in `docs/iphone-gym-test.md`. Capabilities stay unknown; no readback is claimed.
+- Native snapshot download/decompression, phone SQLite crash/restart and signing require
+  device verification. Recorded-source tests use real SQLite on Bun, not the Expo engine.
+- Snapshot catalogs are nightly, bulk downloads per selected layout. They are not live
+  manufacturer APIs. First download can be large; keep the app open on Wi-Fi. A failed
+  refresh retains installed catalogs and all logs. Hardware metadata is pinned at the
+  recorded revision; future placements fail closed until it is refreshed.
+- Animated/multi-frame climbs are omitted; no guessed flattening, mirrored configuration
+  inference or unverified V2 adjacent-LED extension. All currently published static layouts
+  are offered, but hardware must match the climber's manual size/layout/angle choice.
+- Problem-first discovery searches downloaded rows across manufacturers. Unseen remote
+  layouts need an explicit layout choice and initial download. Log keys from the previous
+  sample build are retained, separate from the real source keys.
+- Native backup/restore (A9), live sync and TopLogger integration (A6) are not included.
+  History lives on this phone; reinstalling/deleting the app can lose it. Backup is optional
+  under ADR-0001; no automatic cross-device transfer is promised.
+- Data/provenance inventory records user approval to reuse BoardSesh code and public
+  snapshots. Manufacturer/commercial rights and full transitive-license review still
+  require a release review. No logos, photos, hold art or copied UI assets are included.
+- iOS cannot be built on this Windows/WSL host. The owner will build locally on their
+  MacBook with Xcode/Personal Team. Android compilation and UI evidence are recorded in
+  the implementation report; neither substitutes for iPhone hardware evidence.
+- The browser is a rendering/test aid with in-memory records, not a supported persistent
+  product target. Native phone builds use SQLite and real sources; only a user-started
+  Bluetooth action creates a BLE manager or requests its permissions.

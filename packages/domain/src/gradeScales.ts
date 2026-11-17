@@ -64,7 +64,11 @@ const V_TO_FONT: Readonly<Record<string, string>> = Object.fromEntries(
 
 /** Builds a Grade from a published label. Unknown labels keep their text and get difficulty null. */
 export function makeGrade(system: GradeSystem, publishedLabel: string): Grade {
-  const key = publishedLabel.trim().toUpperCase();
+  const published = publishedLabel.trim().toUpperCase();
+  const key =
+    system === 'font' && /^[0-9][A-C]?[+]?[ ]*\/V(?:B|[0-9]+)$/.test(published)
+      ? published.split('/')[0]!.trim()
+      : published;
   const fontLabel = system === 'font' ? key : V_TO_FONT[key];
   const index = fontLabel === undefined ? -1 : FONT_LADDER.indexOf(fontLabel);
   return { system, label: publishedLabel, difficulty: index >= 0 ? index : null };

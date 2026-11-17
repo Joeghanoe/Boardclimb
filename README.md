@@ -2,7 +2,7 @@
 
 A local-first React Native app for climbers on Kilter, MoonBoard and Tension boards: find a problem, light it on the board, and log attempts, Top and Flash. No account.
 
-Real manufacturer catalogs and Bluetooth protocols are not connected yet; the app runs on labelled sample data and a scripted radio. See `docs/solution-design.md` (Known limits) and each adapter's `SPIKE.md`.
+Phone builds use public BoardSesh catalog snapshots and native Bluetooth with reference-derived Kilter, MoonBoard and Tension encoders. Physical compatibility is pending gym validation. The web preview stays on labelled sample data and a scripted radio. See `docs/solution-design.md` (Known limits), ADR-0005 and the [iPhone build/test guide](docs/iphone-gym-test.md).
 
 ## Run
 
@@ -32,7 +32,8 @@ bun run web
 ```
 
 The browser preview uses sample catalogs, a scripted radio and in-memory storage.
-A phone development build is required to verify device persistence and native behaviour.
+Phone builds use SQLite and real snapshot/BLE adapters. For a MacBook-built, locally
+signed iPhone app that runs at the gym without Metro, follow [the build guide](docs/iphone-gym-test.md).
 
 On the current workstation, the Linux clone's `origin` points to the Windows checkout
 at `/mnt/d/Prototypes/BoardClimb`. Fetch committed Windows changes with `git fetch origin`
@@ -47,5 +48,5 @@ bash ~/.golden-path-harness/projects/BoardClimb-78488f35/verify.sh
 ```
 
 That harness is workstation tooling, not a repository dependency. The portable gate
-is `bun run verify`. A proposed GitHub Actions workflow is in
-[docs/ci-proposal.md](docs/ci-proposal.md); it is not active.
+is `bun run verify`. GitHub Actions runs the project gate, web/iOS JavaScript exports and Android
+compilation through `.github/workflows/verify.yml`. It does not deploy or sign an iOS build.

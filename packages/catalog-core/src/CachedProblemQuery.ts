@@ -1,7 +1,9 @@
 import type { ProblemFilters } from '@boardclimb/domain';
 
 export interface CachedProblemQuery {
-  configKey: string;
+  /** Null searches all previously downloaded configurations. */
+  configKey: string | null;
+  search?: string;
   filters: ProblemFilters;
   /** Whether the provider gives ratings at all; decides how the rating filter applies. */
   providerHasRatings: boolean;

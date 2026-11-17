@@ -1,0 +1,12 @@
+{
+  "name": "@boardclimb/protocol-aurora",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@boardclimb/domain": "*",
+    "@boardclimb/bluetooth-core": "*"
+  }
+}

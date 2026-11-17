@@ -2,4 +2,8 @@
 export interface ProviderHoldRecord {
   holdId: string;
   role: string;
+  x?: number;
+  y?: number;
+  ledPosition?: number;
+  ledColor?: string;
 }

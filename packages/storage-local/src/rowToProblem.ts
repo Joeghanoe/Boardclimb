@@ -1,3 +1,4 @@
+import { isBoardBounds } from '@boardclimb/domain';
 import { MANUFACTURERS } from '@boardclimb/domain';
 import type { HoldPlacement, Problem, ProblemKey, ProblemSummary } from '@boardclimb/domain';
 import type { ProblemRow } from './ProblemRow';
@@ -26,8 +27,17 @@ export function rowToSummary(row: ProblemRow): ProblemSummary {
 export function rowToProblem(row: ProblemRow): Problem | null {
   if (row.detail_json === null) return null;
   let holds: unknown;
+  let setter: unknown;
+  let bounds: Problem['bounds'];
   try {
-    holds = (JSON.parse(row.detail_json) as { holds?: unknown }).holds;
+    const detail = JSON.parse(row.detail_json) as {
+      holds?: unknown;
+      setter?: unknown;
+      bounds?: Problem['bounds'];
+    };
+    holds = detail.holds;
+    setter = detail.setter;
+    bounds = detail.bounds;
   } catch {
     throw corrupt(row);
   }
@@ -37,5 +47,12 @@ export function rowToProblem(row: ProblemRow): Problem | null {
       (hold: Partial<HoldPlacement>) => typeof hold.holdId === 'string' && typeof hold.role === 'string',
     );
   if (!valid) throw corrupt(row);
-  return { ...rowToSummary(row), holds: holds as HoldPlacement[] };
+  if (bounds !== undefined && !isBoardBounds(bounds)) throw corrupt(row);
+  if (setter !== undefined && typeof setter !== 'string') throw corrupt(row);
+  return {
+    ...rowToSummary(row),
+    holds: holds as HoldPlacement[],
+    ...(bounds ? { bounds } : {}),
+    ...(typeof setter === 'string' ? { setter } : {}),
+  };
 }

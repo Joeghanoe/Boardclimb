@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 import { radii, spacing, touchTarget } from '../tokens/layout';
 import { AppText } from './AppText';
@@ -12,6 +12,8 @@ interface ButtonProps {
   /** Large buttons are the main action on a screen. */
   large?: boolean;
   disabled?: boolean;
+  selected?: boolean;
+  expanded?: boolean;
   /** Shows a spinner and ignores presses; the label stays for screen readers. */
   busy?: boolean;
   accessibilityHint?: string;
@@ -25,6 +27,8 @@ export function Button({
   variant = 'secondary',
   large = false,
   disabled = false,
+  selected,
+  expanded,
   busy = false,
   accessibilityHint,
   testID,
@@ -40,7 +44,13 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled: inactive, busy }}
+      {...(selected !== undefined && Platform.OS === 'web' ? { 'aria-pressed': selected } : {})}
+      accessibilityState={{
+        disabled: inactive,
+        busy,
+        ...(selected === undefined || Platform.OS === 'web' ? {} : { selected }),
+        ...(expanded === undefined ? {} : { expanded }),
+      }}
       {...(accessibilityHint === undefined ? {} : { accessibilityHint })}
       {...(testID === undefined ? {} : { testID })}
       disabled={inactive}
@@ -56,6 +66,7 @@ export function Button({
     >
       {busy ? <ActivityIndicator color={palette.text} style={styles.spinner} /> : null}
       <AppText variant="bodyStrong" style={{ color: palette.text, textAlign: 'center' }}>
+        {selected ? '✓ ' : expanded === undefined ? '' : expanded ? '− ' : '+ '}
         {label}
       </AppText>
     </Pressable>

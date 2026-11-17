@@ -1,3 +1,9 @@
+# Integration status (2026-11-17)
+
+Native composition now supplies `SnapshotProviderSource` over public BoardSesh SQLite snapshots. Recorded real-response, paging, geometry and offline/restart scenarios pass. No hosted BoardSesh app API is used. Source terms/revision are in ADR-0005 and the licensing inventory; public distribution rights review remains open.
+
+The original spike checklist below is retained as the validation history. Statements that no implementation exists describe the original baseline, not the current native composition.
+
 # MoonBoard catalog: open spike
 
 Status: **no real MoonBoard `ProviderSource` exists.** `createMoonBoardCatalog()` defaults to

@@ -40,3 +40,11 @@ ADR-0001 requires reversible Top and Flash, non-inflating attempt counts, one lo
 **Negative:** Every reader folds events (cost bounded by per-problem reads; a scale test covers 10,000 events). The success contribution moves to a later day if the climber turns Top off and on again on a later day; this is deliberate, because the contribution reflects the current achievement. Historical edits are appended with their own session date; no tool rewrites old rows.
 
 **Risks:** If the success-contribution day rule proves wrong in usability testing, only `summarizeLog` and its tests change, because no total is stored. A schema change needs a numbered migration and a migration test with a fixture database from the previous version.
+
+## Additive detail metadata (2026-11-17, ADR-0005)
+
+`problems.detail_json` may also carry optional `setter` and `bounds`, and each hold
+may carry `x`, `y`, `ledPosition` and `ledColor`. These are validated source-derived
+cached details. Legacy details with only holds remain readable; there is no new
+column, migration, log payload, stored total or session rule. External catalog
+snapshot files are separate read-only inputs, never replacements for boardclimb.db.

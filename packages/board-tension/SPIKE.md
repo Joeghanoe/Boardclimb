@@ -1,3 +1,9 @@
+# Integration status (2026-11-17)
+
+Native composition now supplies a BoardSesh-derived device matcher and encoder over `react-native-ble-plx`. Byte vectors and scripted lifecycle scenarios pass. This is reference-derived support, not a successful physical-board test. Firmware, two-phone takeover, lock/reconnect and LEDs remain on the gym checklist; capabilities stay unknown.
+
+The original spike checklist below is retained as the validation history. Statements that no implementation exists describe the original baseline, not the current native composition.
+
 # Tension controller: open spike
 
 Status: **no verified Tension BLE protocol.** By default `createTensionController` recognises no device and
