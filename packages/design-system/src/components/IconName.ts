@@ -1,0 +1,17 @@
+export type IconName =
+  | 'back'
+  | 'chevronRight'
+  | 'chevronDown'
+  | 'plus'
+  | 'minus'
+  | 'check'
+  | 'bolt'
+  | 'bulb'
+  | 'info'
+  | 'sliders'
+  | 'search'
+  | 'board'
+  | 'close'
+  | 'swap'
+  | 'arrowUpRight'
+  | 'star';

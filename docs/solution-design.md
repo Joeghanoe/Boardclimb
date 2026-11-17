@@ -166,3 +166,25 @@ Untrusted: every provider response (validated into domain types at the adapter e
 - The browser is a rendering/test aid with in-memory records, not a supported persistent
   product target. Native phone builds use SQLite and real sources; only a user-started
   Bluetooth action creates a BLE manager or requests its permissions.
+
+## Complete board view (2026-11-17 local implementation)
+
+`BoardDirectory.geometry` reads complete layout geometry through `BoardCatalog`.
+The snapshot adapter supplies all mounted hold positions for the selected layout
+and size, with approved bundled BoardSesh traced outlines. Geometry is separate
+from `Problem.holds`, which contains only that problem's active holds, and is not
+written into the problem cache or log. No persistence layout changes are required.
+
+The board view fits the whole layout within the available screen area, preserves
+its aspect ratio, and highlights route holds by stable placement ID. Every other
+hold stays gray. Untraced Aurora placements use a neutral circular marker;
+MoonBoard cells without a traced hold are omitted rather than inventing holds in
+empty cells. Missing route placements are reported rather than guessed.
+MoonBoard's calibrated artwork coordinates are isolated in the adapter; screens
+receive domain geometry, not manufacturer-specific coordinate rules.
+
+The compact problem action bar retains explicit manual-attempt adjustment, Top,
+Flash conflict acknowledgement/cancellation, and Light up. Viewing the board,
+loading geometry and logging never send LEDs. `react-native-svg` renders bundled
+vectors offline; source revision, attribution and the remaining public-distribution
+artwork review are recorded in `docs/licensing-inventory.md` and the third-party notice.

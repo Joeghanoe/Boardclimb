@@ -1,4 +1,4 @@
-import type { BoardConfiguration, BoardModel, Manufacturer } from '@boardclimb/domain';
+import type { BoardConfiguration, BoardGeometry, BoardModel, Manufacturer } from '@boardclimb/domain';
 import { CatalogError } from '@boardclimb/catalog-core';
 import type {
   CatalogCapabilities,
@@ -8,6 +8,7 @@ import type {
   ProviderSource,
 } from '@boardclimb/catalog-core';
 import hardware from '../data/hardware.json';
+import outlineData from '../data/hold-outlines.json';
 import type { SnapshotReader } from './SnapshotReader';
 
 interface ClimbRow {
@@ -71,6 +72,63 @@ export class SnapshotProviderSource implements ProviderSource {
       }
     }
     return configs;
+  }
+
+  /** Bundled full-layout geometry, available without downloading a problem catalog. */
+  async fetchBoardGeometry(configurationId: string): Promise<BoardGeometry> {
+    const { layout, size } = await this.config(configurationId);
+    const outlines =
+      (outlineData as Record<string, Record<string, number[]>>)[`${this.manufacturer}/${layout}-${size}`] ??
+      {};
+    if (this.manufacturer === 'moonboard') {
+      const mini = layout === 6 || layout === 7;
+      const rows = mini ? 12 : 18;
+      const width = 650,
+        height = mini ? 694 : 1000;
+      const margins = mini ? [0.1047, 0.0508, 0.0793, 0.0571] : [0.1, 0.05, 0.06, 0.04];
+      const [left, right, top, bottom] = margins as [number, number, number, number];
+      return {
+        bounds: { left: 0, right: width, bottom: 0, top: height },
+        holds: Object.entries(outlines).map(([holdId, outline]) => {
+          const index = Number(holdId) - 1;
+          return {
+            holdId,
+            outline,
+            x: (left + (((index % 11) + 0.5) / 11) * (1 - left - right)) * width,
+            y: height - (top + ((rows - Math.floor(index / 11) - 0.5) / rows) * (1 - top - bottom)) * height,
+            radius: Math.min(width / 11, height / rows) * 0.525,
+          };
+        }),
+      };
+    }
+    const grid = hardware.sizes.find((row) => row.board_type === this.manufacturer && row.id === size)!;
+    const bounds = {
+      left: grid.edge_left,
+      right: grid.edge_right,
+      bottom: grid.edge_bottom,
+      top: grid.edge_top,
+    };
+    return {
+      bounds,
+      holds: hardware.placements
+        .filter(
+          (point) =>
+            point.board_type === this.manufacturer &&
+            point.layout_id === layout &&
+            point.product_size_id === size &&
+            point.x > bounds.left &&
+            point.x < bounds.right &&
+            point.y > bounds.bottom &&
+            point.y < bounds.top,
+        )
+        .map((point) => ({
+          holdId: String(point.id),
+          x: point.x,
+          y: point.y,
+          radius: 4,
+          ...(outlines[String(point.id)] ? { outline: outlines[String(point.id)]! } : {}),
+        })),
+    };
   }
 
   private async config(id: string): Promise<{ layout: number; size: number; angle: number }> {

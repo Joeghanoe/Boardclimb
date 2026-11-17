@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppText, Button, spacing, useTheme } from '@boardclimb/design-system';
+import { AppText, IconButton, spacing, useTheme } from '@boardclimb/design-system';
 
 interface ScreenFrameProps {
   title: string;
+  /** Small line above the title, for example the board being browsed. */
+  eyebrow?: string;
   /** Inactive preserved screens are outside the current document landmarks. */
   active?: boolean;
   onBack?: () => void;
@@ -13,7 +15,14 @@ interface ScreenFrameProps {
 }
 
 /** Page chrome: safe areas, a back control, the title and one optional action. Content is capped for tablets and desktop. */
-export function ScreenFrame({ title, onBack, headerRight, children, active = true }: ScreenFrameProps) {
+export function ScreenFrame({
+  title,
+  eyebrow,
+  onBack,
+  headerRight,
+  children,
+  active = true,
+}: ScreenFrameProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   return (
@@ -31,9 +40,14 @@ export function ScreenFrame({ title, onBack, headerRight, children, active = tru
     >
       <View style={styles.column}>
         <View style={styles.header}>
-          {onBack ? <Button label="Back" onPress={onBack} /> : null}
+          {onBack ? <IconButton icon="back" label="Back" onPress={onBack} /> : null}
           <View style={styles.title} accessibilityRole={active ? 'header' : 'none'}>
-            <AppText variant="title" numberOfLines={2}>
+            {eyebrow ? (
+              <AppText variant="eyebrow" tone="muted" numberOfLines={1}>
+                {eyebrow}
+              </AppText>
+            ) : null}
+            <AppText variant="display" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
               {title}
             </AppText>
           </View>
@@ -52,11 +66,13 @@ const styles = StyleSheet.create({
   column: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center' },
   header: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: spacing.md,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
   },
-  title: { flex: 1 },
+  title: { flexGrow: 1, flexShrink: 1, flexBasis: 140, gap: 2 },
   body: { flex: 1 },
 });

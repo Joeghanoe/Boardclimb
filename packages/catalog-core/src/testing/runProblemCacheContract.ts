@@ -123,6 +123,24 @@ export function runProblemCacheContract(
       expect(page.items[1]).toMatchObject({ name: 'Renamed', rating: 4 });
     });
 
+    it('saves a large provider page whole, in order, and updates repeats without duplicating them', async () => {
+      const cache = await create();
+      const page = Array.from({ length: 250 }, (_, index) => summary(`p${index}`, '6A', 3));
+      await cache.upsertSummaries(CONFIG, page);
+      await cache.upsertSummaries(CONFIG, [summary('p10', '7A', 4.5), summary('p10', '7B', 4)]);
+      const listed = await cache.listProblems({
+        configKey: CONFIG,
+        filters: defaultProblemFilters,
+        providerHasRatings: true,
+        after: null,
+        limit: 500,
+      });
+      expect(listed.items.map((item) => item.providerProblemId)).toEqual(
+        page.map((item) => item.providerProblemId),
+      );
+      expect(listed.items[10]).toMatchObject({ grade: { label: '7B' }, rating: 4 });
+    });
+
     it('stores a missing rating as not rated, not zero', async () => {
       const cache = await create();
       await seedCache(cache);

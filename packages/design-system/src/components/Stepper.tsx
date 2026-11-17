@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 import { radii, spacing, touchTarget } from '../tokens/layout';
 import { AppText } from './AppText';
+import { Icon } from './Icon';
 
 interface StepperProps {
   /** What is shown between the controls: a count, or a label such as a grade. */
@@ -38,15 +39,9 @@ export function Stepper({
       accessibilityState={{ disabled: off }}
       disabled={off}
       onPress={onPress}
-      style={[
-        styles.control,
-        { backgroundColor: colors.surface, borderColor: colors.controlBorder },
-        off && styles.off,
-      ]}
+      style={[styles.control, { backgroundColor: colors.surfaceMuted }, off && styles.off]}
     >
-      <AppText variant="title" importantForAccessibility="no">
-        {symbol}
-      </AppText>
+      <Icon name={symbol === '+' ? 'plus' : 'minus'} color={colors.text} size={18} weight={2.4} />
     </Pressable>
   );
   return (
@@ -57,7 +52,7 @@ export function Stepper({
         accessibilityLabel={`${valueLabel}: ${display}`}
         style={[styles.value, { minWidth: valueWidth }]}
       >
-        <AppText variant="title" style={styles.valueText}>
+        <AppText variant="label" style={styles.valueText}>
           {display}
         </AppText>
       </View>
@@ -71,8 +66,7 @@ const styles = StyleSheet.create({
   control: {
     width: touchTarget + 4,
     height: touchTarget + 4,
-    borderRadius: radii.md,
-    borderWidth: 1,
+    borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },

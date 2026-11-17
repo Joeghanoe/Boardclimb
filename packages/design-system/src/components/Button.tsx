@@ -1,25 +1,31 @@
 import { ActivityIndicator, Platform, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/useTheme';
-import { radii, spacing, touchTarget } from '../tokens/layout';
+import { condensedSize, radii, spacing, touchTarget, typography } from '../tokens/layout';
+import { shadows } from '../tokens/shadows';
 import { AppText } from './AppText';
+import { Icon } from './Icon';
+import type { IconName } from './IconName';
 
 interface ButtonProps {
   label: string;
   onPress: () => void;
   /** A shortcut only: whatever it does must also be reachable by a visible control (NFR-007). */
   onLongPress?: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'accent' | 'charcoal' | 'ghost';
   /** Large buttons are the main action on a screen. */
   large?: boolean;
   disabled?: boolean;
   selected?: boolean;
   expanded?: boolean;
+  /** Leading line icon; decorative, the label still names the action. */
+  icon?: IconName;
   /** Shows a spinner and ignores presses; the label stays for screen readers. */
   busy?: boolean;
   accessibilityHint?: string;
   testID?: string;
 }
 
+/** A pill-shaped action. Selected and expanded states show an icon as well as a fill. */
 export function Button({
   label,
   onPress,
@@ -29,17 +35,31 @@ export function Button({
   disabled = false,
   selected,
   expanded,
+  icon,
   busy = false,
   accessibilityHint,
   testID,
 }: ButtonProps) {
   const { colors } = useTheme();
   const palette = {
-    primary: { background: colors.primary, text: colors.onPrimary, border: colors.primary },
-    secondary: { background: colors.surface, text: colors.text, border: colors.controlBorder },
-    danger: { background: colors.danger, text: colors.onDanger, border: colors.danger },
+    primary: { background: colors.primary, text: colors.onPrimary },
+    secondary: { background: colors.surface, text: colors.text },
+    danger: { background: colors.danger, text: colors.onDanger },
+    accent: { background: colors.accent, text: colors.onAccent },
+    charcoal: {
+      background: colors.surfaceCharcoalRaised,
+      text: colors.onSurfaceCharcoal,
+    },
+    ghost: { background: 'transparent', text: colors.text },
   }[variant];
   const inactive = disabled || busy;
+  const leading: IconName | undefined = selected
+    ? 'check'
+    : expanded === undefined
+      ? icon
+      : expanded
+        ? 'minus'
+        : 'plus';
   return (
     <Pressable
       accessibilityRole="button"
@@ -59,14 +79,23 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         large && styles.large,
-        { backgroundColor: palette.background, borderColor: palette.border },
+        { backgroundColor: palette.background },
+        variant === 'secondary' && shadows.soft,
+        variant === 'primary' && large && shadows.lifted,
         pressed && styles.pressed,
         disabled && styles.disabled,
       ]}
     >
-      {busy ? <ActivityIndicator color={palette.text} style={styles.spinner} /> : null}
-      <AppText variant="bodyStrong" style={{ color: palette.text, textAlign: 'center' }}>
-        {selected ? '✓ ' : expanded === undefined ? '' : expanded ? '− ' : '+ '}
+      {busy ? (
+        <ActivityIndicator color={palette.text} />
+      ) : leading ? (
+        <Icon name={leading} color={palette.text} size={large ? 20 : 18} weight={2.4} />
+      ) : null}
+      <AppText
+        variant="label"
+        numberOfLines={1}
+        style={[{ color: palette.text, textAlign: 'center' }, large && styles.largeLabel]}
+      >
         {label}
       </AppText>
     </Pressable>
@@ -75,17 +104,17 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: touchTarget,
-    paddingHorizontal: spacing.lg,
+    minHeight: touchTarget + 4,
+    paddingHorizontal: spacing.lg + 2,
     paddingVertical: spacing.sm,
-    borderRadius: radii.md,
-    borderWidth: 1,
+    borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    gap: spacing.sm,
   },
-  large: { minHeight: 56 },
-  pressed: { opacity: 0.8 },
-  disabled: { opacity: 0.5 },
-  spinner: { marginRight: spacing.sm },
+  large: { minHeight: 58, paddingHorizontal: spacing.xl },
+  largeLabel: { ...typography.title, ...condensedSize(21) },
+  pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
+  disabled: { opacity: 0.4 },
 });

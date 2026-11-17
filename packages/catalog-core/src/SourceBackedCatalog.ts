@@ -1,10 +1,13 @@
 import type {
   BoardConfiguration,
+  BoardGeometry,
   BoardModel,
   Manufacturer,
   Problem,
+  ProblemFilters,
   ProblemSummary,
 } from '@boardclimb/domain';
+import { matchesProblemFilters } from '@boardclimb/domain';
 import type { BoardCatalog } from './BoardCatalog';
 import { CatalogError } from './CatalogError';
 import type { CatalogCapabilities } from './CatalogCapabilities';
@@ -19,10 +22,39 @@ import { toProblem, toProblemSummary } from './mapProviderRecord';
  * provider-shaped leaves this class (CODE.5).
  */
 export class SourceBackedCatalog implements BoardCatalog {
+  readonly queryProblems?: BoardCatalog['queryProblems'];
+
   constructor(
     readonly manufacturer: Manufacturer,
     private readonly source: ProviderSource,
-  ) {}
+  ) {
+    if (source.queryProblemPage) this.queryProblems = (...args) => this.query(...args);
+  }
+
+  /** Filtered by the source, then checked against the domain rule so the semantics never drift. */
+  private async query(
+    configuration: BoardConfiguration,
+    filters: ProblemFilters,
+    query: ProblemQuery,
+    cursor?: string,
+  ): Promise<PaginatedResult<ProblemSummary>> {
+    const page = await this.guard(() =>
+      this.source.queryProblemPage!(configuration.id, filters, cursor ?? null, query.pageSize),
+    );
+    const items: ProblemSummary[] = [];
+    let skipped = 0;
+    for (const record of page.records) {
+      const summary = toProblemSummary(configuration, record);
+      if (summary && matchesProblemFilters(summary, filters, this.source.capabilities.ratings))
+        items.push(summary);
+      else skipped += 1;
+    }
+    return { items, nextCursor: page.nextCursor, skipped };
+  }
+
+  getBoardGeometry(configuration: BoardConfiguration): Promise<BoardGeometry | null> {
+    return this.guard(() => this.source.fetchBoardGeometry?.(configuration.id) ?? Promise.resolve(null));
+  }
 
   capabilities(): CatalogCapabilities {
     return this.source.capabilities;

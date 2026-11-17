@@ -30,3 +30,6 @@ export * from './summarizeLog';
 
 export type { BoardBounds } from './BoardBounds';
 export { isBoardBounds } from './isBoardBounds';
+
+export type { BoardHold } from './BoardHold';
+export type { BoardGeometry } from './BoardGeometry';

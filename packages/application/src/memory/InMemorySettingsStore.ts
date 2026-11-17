@@ -1,4 +1,4 @@
-import type { ProblemFilters } from '@boardclimb/domain';
+import type { GradeSystem, ProblemFilters } from '@boardclimb/domain';
 import type { BoardSelection } from '../ports/BoardSelection';
 import type { SettingsStore } from '../ports/SettingsStore';
 
@@ -6,6 +6,7 @@ import type { SettingsStore } from '../ports/SettingsStore';
 export class InMemorySettingsStore implements SettingsStore {
   private filters: ProblemFilters | null = null;
   private selection: BoardSelection | null = null;
+  private gradeScale: GradeSystem | null = null;
 
   loadFilters(): Promise<ProblemFilters | null> {
     return Promise.resolve(this.filters);
@@ -22,6 +23,15 @@ export class InMemorySettingsStore implements SettingsStore {
 
   saveBoardSelection(selection: BoardSelection): Promise<void> {
     this.selection = { ...selection };
+    return Promise.resolve();
+  }
+
+  loadGradeScale(): Promise<GradeSystem | null> {
+    return Promise.resolve(this.gradeScale);
+  }
+
+  saveGradeScale(scale: GradeSystem): Promise<void> {
+    this.gradeScale = scale;
     return Promise.resolve();
   }
 }

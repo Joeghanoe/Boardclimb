@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 import { radii, spacing, touchTarget } from '../tokens/layout';
 import { AppText } from './AppText';
@@ -19,6 +19,7 @@ export function ToggleButton({ label, value, onValueChange, disabled = false, te
     <Pressable
       accessibilityRole="switch"
       accessibilityLabel={label}
+      {...(Platform.OS === 'web' ? { 'aria-checked': value } : {})}
       accessibilityState={{ checked: value, disabled }}
       {...(testID === undefined ? {} : { testID })}
       disabled={disabled}
@@ -26,13 +27,12 @@ export function ToggleButton({ label, value, onValueChange, disabled = false, te
       style={[
         styles.toggle,
         {
-          backgroundColor: value ? colors.success : colors.surface,
-          borderColor: value ? colors.success : colors.controlBorder,
+          backgroundColor: value ? colors.success : colors.surfaceMuted,
         },
         disabled && styles.disabled,
       ]}
     >
-      <AppText variant="bodyStrong" style={{ color: value ? colors.onSuccess : colors.text }}>
+      <AppText variant="label" style={{ color: value ? colors.onSuccess : colors.text }}>
         {label}
       </AppText>
       <AppText style={{ color: value ? colors.onSuccess : colors.textMuted }}>{value ? 'On' : 'Off'}</AppText>
@@ -44,8 +44,7 @@ const styles = StyleSheet.create({
   toggle: {
     flex: 1,
     minHeight: touchTarget + 12,
-    borderRadius: radii.md,
-    borderWidth: 1,
+    borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     alignItems: 'center',

@@ -96,7 +96,10 @@ export class ProblemBrowser {
     };
   }
 
-  /** Re-fetches the first provider page so ratings and grades stay current. One request per configuration at a time. */
+  /**
+   * Re-fetches the first provider page so ratings and grades stay current, without moving the paging position.
+   * One request per configuration at a time.
+   */
   refresh(configuration: BoardConfiguration): Promise<RefreshResult> {
     const configKey = makeConfigKey(configuration);
     const running = this.refreshing.get(configKey);
@@ -134,10 +137,15 @@ export class ProblemBrowser {
     try {
       const result = await catalog.listProblems(configuration, { pageSize: this.pageSize });
       await cache.upsertSummaries(configKey, result.items);
+      // Only the first page was re-read. While paging is still under way, keep the position it reached (re-read,
+      // since a browse may have moved it meanwhile), or scrolling would re-download from page two and a deep
+      // catalog would look short. Once paging had reached the end, reopen it so problems added since are found.
+      const latest = (await cache.getSyncState(configKey)) ?? state;
+      const reopen = latest.exhausted;
       await cache.saveSyncState({
-        ...state,
-        nextCursor: result.nextCursor,
-        exhausted: result.nextCursor === null,
+        ...latest,
+        nextCursor: reopen ? result.nextCursor : latest.nextCursor,
+        exhausted: reopen ? result.nextCursor === null : false,
         lastSuccessAt: this.options.clock.now().toISOString(),
       });
       this.report(configuration, result.items.length, result.skipped, null, started);

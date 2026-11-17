@@ -10,6 +10,8 @@ export function useNavigationStack(initial: Route) {
     () => setStack((current) => (current.length > 1 ? current.slice(0, -1) : current)),
     [],
   );
+  /** Swaps the current screen, for moving between neighbouring problems without growing the back stack. */
+  const replace = useCallback((route: Route) => setStack((current) => [...current.slice(0, -1), route]), []);
   const depth = stack.length;
 
   useEffect(() => {
@@ -21,5 +23,5 @@ export function useNavigationStack(initial: Route) {
     return () => subscription.remove();
   }, [depth, pop]);
 
-  return { route: stack[depth - 1] ?? initial, push, pop };
+  return { route: stack[depth - 1] ?? initial, depth, push, pop, replace };
 }

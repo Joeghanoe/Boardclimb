@@ -1,4 +1,4 @@
-import type { BoardConfiguration, BoardModel } from '@boardclimb/domain';
+import type { BoardConfiguration, BoardGeometry, BoardModel } from '@boardclimb/domain';
 import { CatalogError } from './CatalogError';
 import type { CatalogCapabilities } from './CatalogCapabilities';
 import type { ProviderPage } from './ProviderPage';
@@ -32,6 +32,20 @@ export class InMemoryProviderSource implements ProviderSource {
       this.failNext = null;
       throw error;
     }
+  }
+
+  async fetchBoardGeometry(configurationId: string): Promise<BoardGeometry | null> {
+    const bounds = this.data.problems[configurationId]?.[0]?.bounds;
+    if (!bounds) return null;
+    const holds = [];
+    for (let y = 1; y < bounds.top; y += 1)
+      for (let x = 1; x < bounds.right; x += 1) holds.push({ holdId: `sample-${x}-${y}`, x, y, radius: 0.4 });
+    for (const record of this.data.problems[configurationId] ?? [])
+      for (const hold of record.holds) {
+        if (hold.x !== undefined && hold.y !== undefined && !holds.some((h) => h.holdId === hold.holdId))
+          holds.push({ holdId: hold.holdId, x: hold.x, y: hold.y, radius: 0.4 });
+      }
+    return { bounds, holds };
   }
 
   fetchBoards(): Promise<BoardModel[]> {

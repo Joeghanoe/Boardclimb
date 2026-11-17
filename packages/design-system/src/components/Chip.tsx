@@ -1,6 +1,7 @@
 import { Platform, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 import { radii, spacing, touchTarget } from '../tokens/layout';
+import { shadows } from '../tokens/shadows';
 import { AppText } from './AppText';
 
 interface ChipProps {
@@ -11,7 +12,7 @@ interface ChipProps {
   testID?: string;
 }
 
-/** A choice from a short list (rating filter, manufacturer). Selected state is shown by fill and a check mark. */
+/** A choice from a short list (rating filter, manufacturer). Selected state is shown by an inverted fill and the selected state. */
 export function Chip({ label, selected, onPress, accessibilityLabel, testID }: ChipProps) {
   const { colors } = useTheme();
   return (
@@ -25,17 +26,17 @@ export function Chip({ label, selected, onPress, accessibilityLabel, testID }: C
       style={[
         styles.chip,
         {
-          backgroundColor: selected ? colors.primary : colors.surface,
-          borderColor: selected ? colors.primary : colors.controlBorder,
+          backgroundColor: selected ? colors.surfaceCharcoal : colors.surface,
         },
+        !selected && shadows.soft,
       ]}
     >
       <AppText
-        variant="bodyStrong"
-        style={{ color: selected ? colors.onPrimary : colors.text }}
+        variant="label"
+        style={{ color: selected ? colors.onSurfaceCharcoal : colors.text }}
         importantForAccessibility="no"
       >
-        {selected ? `✓ ${label}` : label}
+        {label}
       </AppText>
     </Pressable>
   );
@@ -47,7 +48,6 @@ const styles = StyleSheet.create({
     minWidth: touchTarget,
     paddingHorizontal: spacing.lg,
     borderRadius: radii.pill,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

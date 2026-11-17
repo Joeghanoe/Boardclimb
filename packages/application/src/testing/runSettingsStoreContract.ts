@@ -11,6 +11,15 @@ export function runSettingsStoreContract(
       const store = await create();
       expect(await store.loadFilters()).toBeNull();
       expect(await store.loadBoardSelection()).toBeNull();
+      expect(await store.loadGradeScale()).toBeNull();
+    });
+
+    it('round-trips the grade scale the climber reads and keeps the latest', async () => {
+      const store = await create();
+      await store.saveGradeScale('v');
+      expect(await store.loadGradeScale()).toBe('v');
+      await store.saveGradeScale('font');
+      expect(await store.loadGradeScale()).toBe('font');
     });
 
     it('round-trips filters, including open ends, and keeps the latest', async () => {

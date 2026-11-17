@@ -1,11 +1,12 @@
 import type { BoardSelection, SettingsStore } from '@boardclimb/application';
 import { MANUFACTURERS } from '@boardclimb/domain';
-import type { ProblemFilters } from '@boardclimb/domain';
+import type { GradeSystem, ProblemFilters } from '@boardclimb/domain';
 import type { SqlDatabase } from './SqlDatabase';
 import { StorageError } from './StorageError';
 
 const FILTERS = 'filters';
 const SELECTION = 'board_selection';
+const GRADE_SCALE = 'grade_scale';
 
 function isNumberOrNull(value: unknown): value is number | null {
   return value === null || (typeof value === 'number' && Number.isFinite(value));
@@ -68,6 +69,18 @@ export class SqlSettingsStore implements SettingsStore {
 
   saveBoardSelection(selection: BoardSelection): Promise<void> {
     return this.write(SELECTION, selection);
+  }
+
+  async loadGradeScale(): Promise<GradeSystem | null> {
+    const value = await this.read(GRADE_SCALE);
+    if (value === undefined) return null;
+    if (value !== 'font' && value !== 'v')
+      throw new StorageError('storage_corrupt', 'The saved grade scale is not valid.');
+    return value;
+  }
+
+  saveGradeScale(scale: GradeSystem): Promise<void> {
+    return this.write(GRADE_SCALE, scale);
   }
 
   private async read(key: string): Promise<unknown> {

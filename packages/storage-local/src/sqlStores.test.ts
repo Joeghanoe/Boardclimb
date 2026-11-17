@@ -82,4 +82,12 @@ describe('SqlProblemCache and SqlSettingsStore refuse values they cannot trust',
     await db.run("INSERT INTO settings (key, value_json) VALUES ('filters', '{not json')");
     await expect(new SqlSettingsStore(db).loadFilters()).rejects.toMatchObject({ code: 'storage_corrupt' });
   });
+
+  it('raises storage_corrupt for a saved grade scale it does not know', async () => {
+    const db = await openTestDatabase();
+    await db.run(`INSERT INTO settings (key, value_json) VALUES ('grade_scale', '"yds"')`);
+    await expect(new SqlSettingsStore(db).loadGradeScale()).rejects.toMatchObject({
+      code: 'storage_corrupt',
+    });
+  });
 });

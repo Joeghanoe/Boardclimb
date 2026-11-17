@@ -1,6 +1,6 @@
 import { CatalogError } from '@boardclimb/catalog-core';
 import { MANUFACTURERS } from '@boardclimb/domain';
-import type { ProblemSummary } from '@boardclimb/domain';
+import type { BoardConfiguration, BoardGeometry, ProblemSummary } from '@boardclimb/domain';
 import type { BoardSelection } from '../ports/BoardSelection';
 import type { CatalogLookup } from '../browse/CatalogLookup';
 import type { BoardWithConfigurations } from './BoardWithConfigurations';
@@ -9,6 +9,10 @@ import type { DirectoryEntry } from './DirectoryEntry';
 /** Lists every manufacturer's boards and layouts for the board-first route (FR-001, FR-004). */
 export class BoardDirectory {
   constructor(private readonly catalogs: CatalogLookup) {}
+
+  geometry(configuration: BoardConfiguration): Promise<BoardGeometry | null> {
+    return this.catalogs(configuration.manufacturer).getBoardGeometry(configuration);
+  }
 
   list(): Promise<DirectoryEntry[]> {
     return Promise.all(MANUFACTURERS.map((manufacturer) => this.listOne(manufacturer)));

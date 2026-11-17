@@ -114,3 +114,27 @@ describe('recorded BoardSesh catalogs (FR-001, FR-005, FR-006)', () => {
     }
   });
 });
+
+it.each(['kilter', 'moonboard', 'tension'] as const)(
+  'FR-005/UI-1: %s exposes a complete offline board with traced silhouettes independently of route downloads',
+  async (manufacturer) => {
+    const { db, source, configuration } = subject(manufacturer);
+    db.close();
+    const geometry = await source.fetchBoardGeometry(configuration.id);
+    expect(geometry.holds.length).toBeGreaterThan(40);
+    expect(new Set(geometry.holds.map((hold) => hold.holdId)).size).toBe(geometry.holds.length);
+    expect(geometry.holds.filter((hold) => hold.outline).length).toBeGreaterThan(40);
+    for (const hold of geometry.holds) {
+      expect(hold.x).toBeGreaterThan(geometry.bounds.left);
+      expect(hold.x).toBeLessThan(geometry.bounds.right);
+      expect(hold.y).toBeGreaterThan(geometry.bounds.bottom);
+      expect(hold.y).toBeLessThan(geometry.bounds.top);
+      expect(hold.radius).toBeGreaterThan(0);
+      if (hold.outline) {
+        expect(hold.outline.length % 2).toBe(0);
+        expect(hold.outline.length).toBeGreaterThanOrEqual(6);
+        expect(hold.outline.every(Number.isFinite)).toBe(true);
+      }
+    }
+  },
+);

@@ -1,82 +1,107 @@
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import type { Problem } from '@boardclimb/domain';
-import { AppText, Card, spacing, useTheme } from '@boardclimb/design-system';
+import Svg, { Circle, G, Polygon, Rect } from 'react-native-svg';
+import type { BoardGeometry, Problem } from '@boardclimb/domain';
+import { AppText, ROLE_COLORS } from '@boardclimb/design-system';
+import { fitBoardCanvas } from './presentation/fitBoardCanvas';
 
 interface BoardMapProps {
   problem: Problem;
+  geometry?: BoardGeometry | null;
+  maxHeight?: number;
+  /** Known width of the space; when given, the board is drawn at its final size on the first frame. */
+  maxWidth?: number;
 }
 
-/** Original coordinate drawing. No manufacturer art; role letters keep it readable without colour. */
-export function BoardMap({ problem }: BoardMapProps) {
-  const { colors } = useTheme();
-  const { bounds, holds } = problem;
-  if (!bounds || holds.some((h) => h.x === undefined || h.y === undefined)) return null;
-  const width = bounds.right - bounds.left,
-    height = bounds.top - bounds.bottom;
-  const letters: Record<string, string> = { start: 'S', hand: 'H', foot: 'F', finish: 'T' };
-  return (
-    <Card>
-      <AppText variant="bodyStrong">Hold map</AppText>
-      <View
-        accessible
-        accessibilityLabel={`Hold map, bottom at bottom. ${holds.length} holds. Start S, hand H, foot F, finish T.`}
-        style={[
-          styles.map,
-          {
-            backgroundColor: colors.surfaceMuted,
-            borderColor: colors.controlBorder,
-            aspectRatio: width / height,
-            maxWidth: (430 * width) / height,
-            alignSelf: 'center',
-          },
-        ]}
-      >
-        {holds.map((h, i) => (
-          <View
-            key={`${h.holdId}-${i}`}
-            style={[
-              styles.hold,
-              {
-                left: `${5 + (90 * (h.x! - bounds.left)) / width}%`,
-                top: `${5 + (90 * (bounds.top - h.y!)) / height}%`,
-                backgroundColor:
-                  h.role === 'start' ? colors.success : h.role === 'finish' ? colors.primary : colors.surface,
-                borderColor: colors.text,
-              },
-            ]}
-          >
-            <AppText
-              variant="caption"
-              style={{
-                color:
-                  h.role === 'start'
-                    ? colors.onSuccess
-                    : h.role === 'finish'
-                      ? colors.onPrimary
-                      : colors.text,
-              }}
-            >
-              {letters[h.role]}
-            </AppText>
-          </View>
-        ))}
+/** Complete physical layout with route rings. Geometry and lighting remain separate. */
+export function BoardMap({ problem, geometry, maxHeight = 500, maxWidth }: BoardMapProps) {
+  const [availableWidth, setAvailableWidth] = useState(300);
+  const roles = useMemo(() => new Map(problem.holds.map((hold) => [hold.holdId, hold.role])), [problem]);
+  if (!geometry?.holds.length)
+    return (
+      <View style={styles.empty}>
+        <AppText tone="inverse">Full board layout unavailable</AppText>
+        <AppText tone="inverseMuted">Choose another layout or open the hold list in Details.</AppText>
       </View>
-      <AppText variant="caption" tone="muted">
-        S Start · H Hand · F Foot · T Finish
-      </AppText>
-    </Card>
+    );
+  const { bounds, holds } = geometry;
+  const boardWidth = bounds.right - bounds.left;
+  const boardHeight = bounds.top - bounds.bottom;
+  const size = fitBoardCanvas(maxWidth ?? availableWidth, maxHeight, bounds);
+  const known = new Set(holds.map((hold) => hold.holdId));
+  const missing = problem.holds.filter((hold) => !known.has(hold.holdId)).length;
+  return (
+    <View
+      style={styles.frame}
+      onLayout={(event) => setAvailableWidth(Math.max(1, event.nativeEvent.layout.width))}
+    >
+      <Svg
+        width={size.width}
+        height={size.height}
+        viewBox={`0 0 ${boardWidth} ${boardHeight}`}
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={`Complete board, ${holds.length} holds. ${problem.holds.length - missing} route holds outlined. Green start, cyan hand, yellow foot, magenta finish. Bottom of the board is at the bottom.`}
+      >
+        <Rect
+          width={boardWidth}
+          height={boardHeight}
+          rx={Math.min(boardWidth, boardHeight) * 0.045}
+          fill="#1C1C1F"
+        />
+        {holds.map((hold) => {
+          const x = hold.x - bounds.left,
+            y = bounds.top - hold.y;
+          const role = roles.get(hold.holdId);
+          const points = hold.outline;
+          const radius = hold.radius;
+          const extent = points
+            ? Math.max(
+                0.6,
+                ...Array.from({ length: points.length / 2 }, (_, index) =>
+                  Math.hypot(points[index * 2]!, points[index * 2 + 1]!),
+                ),
+              )
+            : 0.55;
+          return (
+            <G key={hold.holdId}>
+              {points ? (
+                <Polygon
+                  points={Array.from(
+                    { length: points.length / 2 },
+                    (_, index) => `${x + points[index * 2]! * radius},${y + points[index * 2 + 1]! * radius}`,
+                  ).join(' ')}
+                  fill={role ? '#B3B7B3' : '#858A85'}
+                  stroke="#454A45"
+                  strokeWidth={radius * 0.06}
+                />
+              ) : (
+                <Circle cx={x} cy={y} r={radius * 0.55} fill="#747A74" />
+              )}
+              <Circle cx={x} cy={y} r={radius * 0.09} fill="#333833" />
+              {role ? (
+                <Circle
+                  cx={x}
+                  cy={y}
+                  r={radius * (extent + 0.15)}
+                  fill="none"
+                  stroke={ROLE_COLORS[role].bg}
+                  strokeWidth={radius * 0.14}
+                />
+              ) : null}
+            </G>
+          );
+        })}
+      </Svg>
+      {missing > 0 ? (
+        <AppText tone="inverseMuted" variant="caption">
+          {missing} route holds are missing from this layout. Check the hold list in Details.
+        </AppText>
+      ) : null}
+    </View>
   );
 }
 const styles = StyleSheet.create({
-  map: { width: '100%', maxHeight: 430, borderWidth: 1, borderRadius: 8, marginVertical: spacing.sm },
-  hold: {
-    position: 'absolute',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ translateX: -10 }, { translateY: -10 }],
-  },
+  frame: { width: '100%', alignItems: 'center', justifyContent: 'center' },
+  empty: { padding: 16, gap: 8 },
 });

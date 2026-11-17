@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import type { BoardSessionSnapshot } from '@boardclimb/application';
-import { AppText, Button, Card, Notice, spacing } from '@boardclimb/design-system';
+import { AppText, Button, Card, Notice, spacing, useTheme } from '@boardclimb/design-system';
 import type { Problem } from '@boardclimb/domain';
 import { ConnectionChip } from './ConnectionChip';
 import { describeCommand } from './presentation/describeCommand';
@@ -14,15 +14,17 @@ interface LightUpPanelProps {
 
 /** The one place a lighting command starts: an explicit tap on Light up (FR-008). */
 export function LightUpPanel({ problem, snapshot, onLightUp, onOpenBoard }: LightUpPanelProps) {
+  const { colors } = useTheme();
   const line = problem ? describeCommand(snapshot.command, problem.key) : null;
   const pending = snapshot.command.state === 'pending';
   const needsBoard = snapshot.connection !== 'connected';
+
   return (
-    <Card>
-      <View style={styles.row}>
-        <AppText tone="muted">Board</AppText>
+    <Card style={styles.card}>
+      <View style={styles.headerRow}>
         <ConnectionChip snapshot={snapshot} onPress={onOpenBoard} />
       </View>
+
       <Button
         label="Light up"
         variant="primary"
@@ -32,6 +34,7 @@ export function LightUpPanel({ problem, snapshot, onLightUp, onOpenBoard }: Ligh
         accessibilityHint="Sends this problem to the connected board"
         onPress={onLightUp}
       />
+
       {line?.tone === 'error' ? (
         <Notice
           tone="error"
@@ -40,11 +43,18 @@ export function LightUpPanel({ problem, snapshot, onLightUp, onOpenBoard }: Ligh
           {...(needsBoard ? { actionLabel: 'Open boards', onAction: onOpenBoard } : {})}
         />
       ) : line ? (
-        <View accessibilityLiveRegion="polite">
+        <View
+          accessibilityLiveRegion="polite"
+          style={[styles.statusBox, { backgroundColor: colors.surfaceMuted, borderColor: colors.divider }]}
+        >
           <AppText variant="bodyStrong" tone={line.tone === 'confirmed' ? 'success' : 'default'}>
             {line.title}
           </AppText>
-          {line.message ? <AppText tone="muted">{line.message}</AppText> : null}
+          {line.message ? (
+            <AppText tone="muted" variant="caption">
+              {line.message}
+            </AppText>
+          ) : null}
         </View>
       ) : null}
     </Card>
@@ -52,5 +62,27 @@ export function LightUpPanel({ problem, snapshot, onLightUp, onOpenBoard }: Ligh
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  card: {
+    padding: spacing.sm,
+    borderRadius: 20,
+    gap: spacing.sm,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+  },
+  titleCol: {
+    gap: 2,
+  },
+  sectionCaption: {
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  statusBox: {
+    padding: spacing.md,
+    borderRadius: 12,
+    gap: 4,
+  },
 });

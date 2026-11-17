@@ -120,6 +120,51 @@ describe('incremental browsing with a cache (FR-006, AC-016)', () => {
   });
 });
 
+describe('a background refresh never rewinds paging (FR-006)', () => {
+  it('keeps the download position after a refresh, so scrolling on reaches new problems', async () => {
+    // Deeper than one browse call may fetch (20 provider pages), as a real catalog is.
+    const { browser, configuration } = setup({ count: 400, pageSize: 5 });
+    let after: number | null = null;
+    const seen = new Set<string>();
+    for (let page = 0; page < 30; page += 1) {
+      const result = await browser.browse(configuration, defaultProblemFilters, after);
+      result.items.forEach((item) => seen.add(item.key));
+      after = result.next;
+    }
+
+    await browser.refresh(configuration);
+
+    const next = await browser.browse(configuration, defaultProblemFilters, after);
+    expect(next.items).toHaveLength(5);
+    expect(next.items.every((item) => !seen.has(item.key))).toBe(true);
+  });
+
+  it('reaches every problem in a narrow grade band even when refreshes happen while scrolling', async () => {
+    const { browser, data, configuration } = setup({ count: 400, pageSize: 5 });
+    const grade = makeGrade('v', 'V3').difficulty as number;
+    const filters = { ...defaultProblemFilters, minDifficulty: grade };
+    const expected = (data.problems['cfg'] ?? []).filter((record) =>
+      matchesProblemFilters(
+        { grade: makeGrade('v', record.gradeLabel), rating: record.rating },
+        filters,
+        true,
+      ),
+    ).length;
+    let after: number | null = null;
+    let total = 0;
+    let hasMore = true;
+    for (let guard = 0; hasMore && guard < 200; guard += 1) {
+      const page = await browser.browse(configuration, filters, after);
+      total += page.items.length;
+      after = page.next ?? after;
+      hasMore = page.hasMore;
+      await browser.refresh(configuration);
+    }
+    expect(total).toBe(expected);
+    expect(hasMore).toBe(false);
+  });
+});
+
 describe('failures keep what the climber already has (FR-006, acceptance 9, NFR-005)', () => {
   it('returns cached items with an offline notice when the provider fails', async () => {
     const { browser, source, configuration } = setup();

@@ -1,3 +1,5 @@
+import { BLOCKS } from './BLOCKS';
+import { ROLE_COLORS } from './ROLE_COLORS';
 import { describe, expect, it } from 'bun:test';
 import { contrastRatio } from './contrastRatio';
 import { darkTheme, lightTheme } from './themes';
@@ -15,14 +17,19 @@ describe.each([lightTheme, darkTheme])('$name theme contrast', (theme) => {
     ['label on primary', c.onPrimary, c.primary],
     ['label on success', c.onSuccess, c.success],
     ['label on danger', c.onDanger, c.danger],
+    ['label on accent', c.onAccent, c.accent],
     ['notice text on notice', c.noticeText, c.noticeBackground],
     ['link on surface', c.link, c.surface],
     ['link on background', c.link, c.background],
-    ['primary as text on surface', c.primary, c.surface],
+    ['accent as text on surface', c.accent, c.surface],
+    ['accent as text on background', c.accent, c.background],
     ['connected as text on surface', c.connected, c.surface],
     ['connecting as text on surface', c.connecting, c.surface],
     ['disconnected as text on surface', c.disconnected, c.surface],
     ['danger as text on surface', c.danger, c.surface],
+    ['text on charcoal surface', c.onSurfaceCharcoal, c.surfaceCharcoal],
+    ['muted text on charcoal surface', c.onSurfaceCharcoalMuted, c.surfaceCharcoal],
+    ['primary on charcoal surface', c.primary, c.surfaceCharcoal],
   ];
 
   it.each(textPairs)('%s reaches 4.5:1', (_name, foreground, background) => {
@@ -40,4 +47,12 @@ describe('contrastRatio', () => {
     expect(contrastRatio('#000000', '#FFFFFF')).toBeCloseTo(21, 5);
     expect(contrastRatio('#777777', '#FFFFFF')).toBeCloseTo(4.48, 2);
   });
+});
+
+it.each(Object.entries(ROLE_COLORS))('UI-1: %s hold labels reach 4.5:1', (_role, colors) => {
+  expect(contrastRatio(colors.text, colors.bg)).toBeGreaterThanOrEqual(4.5);
+});
+
+it.each(Object.entries(BLOCKS))('UI-1: text on the %s block reaches 4.5:1', (_name, block) => {
+  expect(contrastRatio(block.on, block.bg)).toBeGreaterThanOrEqual(4.5);
 });

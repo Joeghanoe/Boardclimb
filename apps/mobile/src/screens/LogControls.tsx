@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { AppText, Button, Card, Notice, Stepper, ToggleButton, spacing } from '@boardclimb/design-system';
+import {
+  AppText,
+  Button,
+  Card,
+  Notice,
+  Stepper,
+  ToggleButton,
+  spacing,
+  useTheme,
+} from '@boardclimb/design-system';
 import type { LogSummary } from '@boardclimb/domain';
 import type { LogOutcome } from '@boardclimb/application';
 import { describeLogError } from './presentation/describeLogError';
@@ -25,6 +34,7 @@ export function LogControls({
   onSetTop,
   onSetFlash,
 }: LogControlsProps) {
+  const { colors } = useTheme();
   const [editing, setEditing] = useState(false);
   const [confirmingFlash, setConfirmingFlash] = useState(false);
 
@@ -41,19 +51,38 @@ export function LogControls({
   const ready = summary !== null;
 
   return (
-    <Card>
+    <Card style={styles.card}>
+      <View style={styles.header}>
+        <AppText variant="caption" tone="muted" style={styles.sectionCaption}>
+          CLIMBER LOG
+        </AppText>
+        <AppText variant="bodyStrong">Attempts & Sends</AppText>
+      </View>
+
+      {/* Sporty athletic stats layout inspired by BLOC reference */}
       <View style={styles.totals} accessibilityLiveRegion="polite">
-        <View style={styles.total}>
-          <AppText tone="muted" variant="caption">
-            Today
+        <View style={[styles.statBox, { backgroundColor: colors.surfaceMuted, borderColor: colors.divider }]}>
+          <AppText tone="muted" variant="caption" style={styles.statLabel}>
+            TODAY
           </AppText>
-          <AppText variant="title">{summary ? formatAttempts(summary.sessionAttempts) : '–'}</AppText>
+          <AppText variant="display" style={styles.statValue}>
+            {summary ? summary.sessionAttempts : '–'}
+          </AppText>
+          <AppText tone="muted" variant="caption">
+            {summary ? formatAttempts(summary.sessionAttempts) : 'attempts'}
+          </AppText>
         </View>
-        <View style={styles.total}>
-          <AppText tone="muted" variant="caption">
-            All time
+
+        <View style={[styles.statBox, { backgroundColor: colors.surfaceMuted, borderColor: colors.divider }]}>
+          <AppText tone="muted" variant="caption" style={styles.statLabel}>
+            ALL TIME
           </AppText>
-          <AppText variant="title">{summary ? formatAttempts(summary.lifetimeAttempts) : '–'}</AppText>
+          <AppText variant="display" style={styles.statValue}>
+            {summary ? summary.lifetimeAttempts : '–'}
+          </AppText>
+          <AppText tone="muted" variant="caption">
+            {summary ? formatAttempts(summary.lifetimeAttempts) : 'attempts'}
+          </AppText>
         </View>
       </View>
 
@@ -61,6 +90,7 @@ export function LogControls({
         <View style={styles.grow}>
           <Button
             label="Add attempt"
+            variant="secondary"
             large
             disabled={!ready}
             accessibilityHint="Adds one attempt today. Long press to edit the count."
@@ -69,16 +99,16 @@ export function LogControls({
           />
         </View>
         <Button
-          label={editing ? 'Done' : 'Edit attempts'}
+          label={editing ? 'Done' : 'Edit count'}
           disabled={!ready}
           onPress={() => setEditing((open) => !open)}
         />
       </View>
 
       {editing && summary ? (
-        <View style={styles.editor}>
+        <View style={[styles.editor, { backgroundColor: colors.surfaceMuted, borderColor: colors.divider }]}>
           <AppText tone="muted" variant="caption">
-            Attempts added today
+            Attempts added today (manual adjustments)
           </AppText>
           <Stepper
             display={String(summary.sessionManualAttempts)}
@@ -92,22 +122,26 @@ export function LogControls({
         </View>
       ) : null}
 
-      <View style={styles.actions}>
-        <ToggleButton
-          label="Top"
-          value={summary?.top ?? false}
-          disabled={!ready}
-          onValueChange={(value) => {
-            setConfirmingFlash(false);
-            onSetTop(value);
-          }}
-        />
-        <ToggleButton
-          label="Flash"
-          value={summary?.flash ?? false}
-          disabled={!ready}
-          onValueChange={(value) => void askFlash(value)}
-        />
+      <View style={styles.toggleRow}>
+        <View style={styles.toggleItem}>
+          <ToggleButton
+            label="Top"
+            value={summary?.top ?? false}
+            disabled={!ready}
+            onValueChange={(value) => {
+              setConfirmingFlash(false);
+              onSetTop(value);
+            }}
+          />
+        </View>
+        <View style={styles.toggleItem}>
+          <ToggleButton
+            label="Flash"
+            value={summary?.flash ?? false}
+            disabled={!ready}
+            onValueChange={(value) => void askFlash(value)}
+          />
+        </View>
       </View>
 
       {confirmingFlash ? (
@@ -127,9 +161,55 @@ export function LogControls({
 }
 
 const styles = StyleSheet.create({
-  totals: { flexDirection: 'row', gap: spacing.xl },
-  total: { gap: spacing.xs },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  grow: { flex: 1 },
-  editor: { gap: spacing.xs },
+  card: {
+    padding: spacing.lg,
+    borderRadius: 20,
+    gap: spacing.md,
+  },
+  header: {
+    gap: 2,
+  },
+  sectionCaption: {
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  totals: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  statBox: {
+    flex: 1,
+    padding: spacing.md,
+    borderRadius: 14,
+    alignItems: 'center',
+    gap: 2,
+  },
+  statLabel: {
+    fontWeight: '800',
+    letterSpacing: 1,
+    fontSize: 12,
+  },
+  statValue: {
+    fontWeight: '900',
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  grow: {
+    flex: 1,
+  },
+  editor: {
+    padding: spacing.md,
+    borderRadius: 12,
+    gap: spacing.xs,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  toggleItem: {
+    flex: 1,
+  },
 });

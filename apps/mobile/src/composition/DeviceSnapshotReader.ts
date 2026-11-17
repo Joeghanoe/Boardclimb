@@ -140,7 +140,7 @@ export class DeviceSnapshotReader implements SnapshotReader {
         } else {
           if (String.fromCharCode(...magic.slice(0, 15)) !== 'SQLite format 3')
             throw new Error('Invalid catalog file');
-          downloaded.copy(staged);
+          await downloaded.copy(staged);
         }
       } finally {
         input.close();
@@ -156,7 +156,7 @@ export class DeviceSnapshotReader implements SnapshotReader {
       await db.closeAsync();
       db = undefined;
       if (installed.exists) installed.delete();
-      staged.move(installed);
+      await staged.move(installed);
       new File(this.directory, `${filename}.complete`).write(filename);
       db = await openDatabaseAsync(filename, { useNewConnection: true }, this.directory.uri);
       await this.publish(key, db, filename);
@@ -170,7 +170,8 @@ export class DeviceSnapshotReader implements SnapshotReader {
       );
     } finally {
       if (downloaded.exists) downloaded.delete();
-      if (staged.exists) staged.delete();
+      const unfinished = new File(this.directory, `${key}.staged`);
+      if (unfinished.exists) unfinished.delete();
     }
   }
   private async publish(key: string, db: SQLiteDatabase, filename: string): Promise<void> {

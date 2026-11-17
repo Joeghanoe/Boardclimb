@@ -25,4 +25,14 @@ export interface ColorTokens {
   connected: string;
   connecting: string;
   disconnected: string;
+  /** Restrained orange accent detail. */
+  accent: string;
+  onAccent: string;
+  /** Charcoal panels and feature surfaces. */
+  surfaceCharcoal: string;
+  onSurfaceCharcoal: string;
+  onSurfaceCharcoalMuted: string;
+  surfaceCharcoalBorder: string;
+  /** Controls sitting on a charcoal panel (stepper wells, icon buttons). */
+  surfaceCharcoalRaised: string;
 }

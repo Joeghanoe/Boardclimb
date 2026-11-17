@@ -43,6 +43,6 @@ export function Notice({ tone = 'info', title, message, actionLabel, onAction, t
 }
 
 const styles = StyleSheet.create({
-  box: { borderRadius: radii.md, padding: spacing.lg, gap: spacing.xs },
+  box: { borderRadius: radii.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg, gap: 2 },
   action: { marginTop: spacing.sm, alignSelf: 'flex-start' },
 });

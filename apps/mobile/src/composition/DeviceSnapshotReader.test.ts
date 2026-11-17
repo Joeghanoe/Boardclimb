@@ -28,6 +28,7 @@ const fixture = readFileSync(
 const compressed = gzipSync(fixture);
 let builtAt = '2026-11-17T07:00:00Z';
 let downloadFails = false;
+let decodedDownload = false;
 const handles: { db: Database; closed: boolean; file: string }[] = [];
 class TestDirectory {
   readonly uri: string;
@@ -42,7 +43,7 @@ class TestDirectory {
   }
 }
 class TestFile {
-  readonly uri: string;
+  uri: string;
   constructor(parent: TestDirectory, name: string) {
     this.uri = join(parent.uri, name);
   }
@@ -67,11 +68,14 @@ class TestFile {
   delete() {
     unlinkSync(this.uri);
   }
-  copy(dest: TestFile) {
+  async copy(dest: TestFile) {
+    await Promise.resolve();
     copyFileSync(this.uri, dest.uri);
   }
-  move(dest: TestFile) {
+  async move(dest: TestFile) {
+    await Promise.resolve();
     renameSync(this.uri, dest.uri);
+    this.uri = dest.uri;
   }
   open(mode: string) {
     const fd = openSync(this.uri, mode === 'r' ? 'r' : 'r+');
@@ -98,7 +102,7 @@ class TestFile {
   }
   static async downloadFileAsync(_url: string, dest: TestFile) {
     if (downloadFails) throw new Error('offline');
-    writeFileSync(dest.uri, compressed);
+    writeFileSync(dest.uri, decodedDownload ? fixture : compressed);
     return dest;
   }
 }
@@ -208,4 +212,23 @@ it('FR-006: concurrent cold recovery shares one installed handle and retires any
   await b.release?.();
   await tick();
   expect(handles.filter((h) => !h.closed)).toHaveLength(before + 1);
+});
+
+it('FR-006: an HTTP-decoded SQLite download finishes copying before validation and survives installation cleanup', async () => {
+  decodedDownload = true;
+  builtAt = '2026-11-22T07:00:00Z';
+  const reader = new DeviceSnapshotReader(() => Date.parse('2026-11-22T08:00:00Z'));
+  const old = await reader.open('kilter', 1);
+  await old.release?.();
+  await tick();
+  const filename = `kilter-1-${Date.parse(builtAt)}.db`;
+  expect(readFileSync(join(directory, 'catalog-snapshots', filename))).toEqual(fixture);
+  downloadFails = true;
+  const restarted = new DeviceSnapshotReader(() => Date.parse('2026-11-22T08:00:00Z'));
+  const installed = await restarted.open('kilter', 1);
+  expect((await installed.all('SELECT uuid FROM board_climbs LIMIT 1', [])).length).toBe(1);
+  await installed.release?.();
+  await tick();
+  downloadFails = false;
+  decodedDownload = false;
 });

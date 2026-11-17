@@ -14,12 +14,19 @@ import { rowToProblem, rowToSummary } from './rowToProblem';
 const COLUMNS =
   'seq, problem_key, manufacturer, configuration_id, provider_problem_id, name, grade_system, grade_label, difficulty, rating, detail_json';
 
-const UPSERT = `INSERT INTO problems
-  (problem_key, config_key, manufacturer, configuration_id, provider_problem_id, name, grade_system, grade_label, difficulty, rating)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT (problem_key) DO UPDATE SET
+const UPSERT_COLUMNS =
+  '(problem_key, config_key, manufacturer, configuration_id, provider_problem_id, name, grade_system, grade_label, difficulty, rating)';
+const UPSERT_CONFLICT = `ON CONFLICT (problem_key) DO UPDATE SET
     name = excluded.name, grade_system = excluded.grade_system, grade_label = excluded.grade_label,
     difficulty = excluded.difficulty, rating = excluded.rating`;
+const UPSERT = `INSERT INTO problems ${UPSERT_COLUMNS} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ${UPSERT_CONFLICT}`;
+/** Rows per statement: 10 parameters each stays under SQLite's oldest limit of 999 parameters. */
+const UPSERT_CHUNK = 90;
+
+function upsertMany(count: number): string {
+  const row = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  return `INSERT INTO problems ${UPSERT_COLUMNS} VALUES ${Array.from({ length: count }, () => row).join(', ')} ${UPSERT_CONFLICT}`;
+}
 
 function summaryParams(configKey: string, item: ProblemSummary): SqlValue[] {
   return [
@@ -78,10 +85,23 @@ export class SqlProblemCache implements ProblemCache {
     return { items: rows.map(rowToSummary), last: rows.at(-1)?.seq ?? null };
   }
 
-  upsertSummaries(configKey: string, items: ProblemSummary[]): Promise<void> {
-    if (items.length === 0) return Promise.resolve();
-    return this.db.transaction(async () => {
-      for (const item of items) await this.db.run(UPSERT, summaryParams(configKey, item));
+  /**
+   * One statement per chunk instead of one per problem: on the phone every statement is a round trip to native
+   * SQLite, and filtered browsing saves several provider pages per screen. A single statement is atomic.
+   */
+  async upsertSummaries(configKey: string, items: ProblemSummary[]): Promise<void> {
+    if (items.length === 0) return;
+    const chunks: ProblemSummary[][] = [];
+    for (let start = 0; start < items.length; start += UPSERT_CHUNK)
+      chunks.push(items.slice(start, start + UPSERT_CHUNK));
+    const write = async (chunk: ProblemSummary[]) =>
+      this.db.run(
+        upsertMany(chunk.length),
+        chunk.flatMap((item) => summaryParams(configKey, item)),
+      );
+    if (chunks.length === 1) return write(chunks[0]!);
+    await this.db.transaction(async () => {
+      for (const chunk of chunks) await write(chunk);
     });
   }
 

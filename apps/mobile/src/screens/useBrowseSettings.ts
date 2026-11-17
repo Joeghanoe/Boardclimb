@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { BoardSelection, SettingsStore } from '@boardclimb/application';
 import { defaultProblemFilters } from '@boardclimb/domain';
-import type { ProblemFilters } from '@boardclimb/domain';
+import type { GradeSystem, ProblemFilters } from '@boardclimb/domain';
 
 /**
- * The chosen board layout and the grade and rating filters. Both are read once at start and written on every
+ * The chosen board layout, the grade and rating filters and the grade scale (Font by default). Both are read once at start and written on every
  * change, so they survive a restart and apply to every manufacturer (FR-007). A failed save keeps the on-screen
  * choice; the next change tries again.
  */
@@ -12,14 +12,16 @@ export function useBrowseSettings(settings: SettingsStore) {
   const [loaded, setLoaded] = useState(false);
   const [selection, setSelection] = useState<BoardSelection | null>(null);
   const [filters, setFilters] = useState<ProblemFilters>(defaultProblemFilters);
+  const [gradeScale, setGradeScale] = useState<GradeSystem>('font');
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([settings.loadBoardSelection(), settings.loadFilters()])
-      .then(([savedSelection, savedFilters]) => {
+    Promise.all([settings.loadBoardSelection(), settings.loadFilters(), settings.loadGradeScale()])
+      .then(([savedSelection, savedFilters, savedScale]) => {
         if (cancelled) return;
         setSelection(savedSelection);
         if (savedFilters) setFilters(savedFilters);
+        if (savedScale) setGradeScale(savedScale);
       })
       .catch(() => undefined)
       .finally(() => {
@@ -46,5 +48,13 @@ export function useBrowseSettings(settings: SettingsStore) {
     [settings],
   );
 
-  return { loaded, selection, filters, chooseSelection, changeFilters };
+  const changeGradeScale = useCallback(
+    (next: GradeSystem) => {
+      setGradeScale(next);
+      settings.saveGradeScale(next).catch(() => undefined);
+    },
+    [settings],
+  );
+
+  return { loaded, selection, filters, gradeScale, chooseSelection, changeFilters, changeGradeScale };
 }

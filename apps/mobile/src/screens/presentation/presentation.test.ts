@@ -7,15 +7,17 @@ import { describeCatalogError } from './describeCatalogError';
 import { describeCommand } from './describeCommand';
 import { describeConnection } from './describeConnection';
 import { describeFilters } from './describeFilters';
-import { describeGradeBound } from './describeGradeBound';
 import { describeLogError } from './describeLogError';
 import { describeMode } from './describeMode';
 import { formatAttempts } from './formatAttempts';
 import { formatGrade } from './formatGrade';
+import { gradeBand } from './gradeBand';
+import { displayGrade } from './displayGrade';
+import { filtersToRange, rangeToFilters } from './gradeRange';
+import { gradeStops } from './gradeStops';
 import { formatRating } from './formatRating';
 import { formatSessionDay } from './formatSessionDay';
 import { groupHoldsByRole } from './groupHoldsByRole';
-import { stepGradeBound } from './stepGradeBound';
 
 const key = makeProblemKey('kilter', 'config-1', 'p1');
 const otherKey = makeProblemKey('kilter', 'config-1', 'p2');
@@ -97,6 +99,24 @@ describe('FR-007: grades and ratings are shown as published', () => {
     expect(formatGrade(makeGrade('font', '6X'))).toBe('6X');
   });
 
+  it('shows the grade in the climber’s scale, keeping the published label when there is no reliable conversion', () => {
+    expect(displayGrade(makeGrade('v', 'V3'), 'font')).toBe('6A');
+    expect(displayGrade(makeGrade('v', 'V3'), 'v')).toBe('V3');
+    expect(displayGrade(makeGrade('font', '7A'), 'v')).toBe('V6');
+    expect(displayGrade(makeGrade('font', '6X'), 'v')).toBe('6X');
+    expect(displayGrade(makeGrade('font', '6a/V2'), 'v')).toBe('V2');
+    expect(displayGrade(makeGrade('font', '6a/V2'), 'font')).toBe('6a');
+  });
+
+  it('colours the grade tile by difficulty band, the same for Font and V, neutral when unknown', () => {
+    expect(gradeBand(makeGrade('font', '5+'))).toBe('mint');
+    expect(gradeBand(makeGrade('v', 'V3'))).toBe(gradeBand(makeGrade('font', '6A')));
+    expect(gradeBand(makeGrade('font', '7A'))).toBe('coral');
+    expect(gradeBand(makeGrade('font', '7B'))).toBe('rose');
+    expect(gradeBand(makeGrade('font', '8A'))).toBe('violet');
+    expect(gradeBand(makeGrade('font', '6X'))).toBe('stone');
+  });
+
   it('reads a missing rating as not rated, never zero stars', () => {
     expect(formatRating(null)).toEqual({ text: 'Not rated', spoken: 'Not rated' });
     expect(formatRating(0).text).toBe('0.0 ★');
@@ -104,41 +124,45 @@ describe('FR-007: grades and ratings are shown as published', () => {
   });
 });
 
-describe('FR-007: grade limits step through the ladder without crossing', () => {
-  it('starts from no limit and walks up from the easiest grade', () => {
-    const first = stepGradeBound(defaultProblemFilters, 'min', 1);
-    expect(first.minDifficulty).toBe(0);
-    expect(describeGradeBound(first.minDifficulty)).toBe('3 (VB)');
+describe('FR-007: the grade slider covers the ladder in the climber’s scale', () => {
+  it('has one stop per Font grade, and one per V grade with shared Font grades grouped', () => {
+    const font = gradeStops('font');
+    expect(font).toHaveLength(24);
+    const v = gradeStops('v');
+    expect(new Set(v.map((stop) => stop.label)).size).toBe(v.length);
+    expect(v.find((stop) => stop.label === 'V3')).toEqual({ label: 'V3', from: 5, to: 6 });
   });
 
-  it('clears a limit by stepping past either end', () => {
-    expect(
-      stepGradeBound({ ...defaultProblemFilters, minDifficulty: 0 }, 'min', -1).minDifficulty,
-    ).toBeNull();
-    expect(
-      stepGradeBound({ ...defaultProblemFilters, maxDifficulty: 23 }, 'max', 1).maxDifficulty,
-    ).toBeNull();
-    expect(stepGradeBound(defaultProblemFilters, 'max', -1).maxDifficulty).toBe(23);
+  it('treats a thumb at either end as no limit, so unknown grades are not filtered out', () => {
+    const stops = gradeStops('font');
+    expect(rangeToFilters(defaultProblemFilters, [0, stops.length - 1], stops)).toEqual(
+      defaultProblemFilters,
+    );
+    expect(filtersToRange(defaultProblemFilters, stops)).toEqual([0, stops.length - 1]);
   });
 
-  it('never lets the lower limit pass the upper one, or the reverse', () => {
-    const filters = { ...defaultProblemFilters, minDifficulty: 5, maxDifficulty: 5 };
-    expect(stepGradeBound(filters, 'min', 1).minDifficulty).toBe(5);
-    expect(stepGradeBound(filters, 'max', -1).maxDifficulty).toBe(5);
+  it('round-trips a V range to the widest matching difficulties and back', () => {
+    const stops = gradeStops('v');
+    const low = stops.findIndex((stop) => stop.label === 'V3');
+    const high = stops.findIndex((stop) => stop.label === 'V5');
+    const filters = rangeToFilters(defaultProblemFilters, [low, high], stops);
+    expect(filters).toEqual({ ...defaultProblemFilters, minDifficulty: 5, maxDifficulty: 10 });
+    expect(filtersToRange(filters, stops)).toEqual([low, high]);
+  });
+
+  it('keeps the rating filter when the grade range moves', () => {
+    const stops = gradeStops('font');
+    expect(rangeToFilters({ ...defaultProblemFilters, minStars: 4 }, [3, 8], stops).minStars).toBe(4);
   });
 
   it('summarises the active filters in a few words', () => {
-    expect(describeFilters(defaultProblemFilters)).toBe('Any grade');
-    expect(describeFilters({ minDifficulty: 5, maxDifficulty: 11, minStars: 4 })).toBe(
-      '6A (V3) to 7A (V6) · 4+ ★',
+    expect(describeFilters(defaultProblemFilters, 'font')).toBe('Any grade');
+    expect(describeFilters({ minDifficulty: 5, maxDifficulty: 11, minStars: 4 }, 'font')).toBe(
+      '6A to 7A · 4+ ★',
     );
-    expect(describeFilters({ ...defaultProblemFilters, maxDifficulty: 5 })).toBe('Up to 6A (V3)');
-    expect(describeFilters({ ...defaultProblemFilters, minDifficulty: 5 })).toBe('6A (V3) and up');
-  });
-
-  it('keeps the rating filter untouched', () => {
-    const filters = { ...defaultProblemFilters, minStars: 4 };
-    expect(stepGradeBound(filters, 'min', 1).minStars).toBe(4);
+    expect(describeFilters({ minDifficulty: 5, maxDifficulty: 11, minStars: 0 }, 'v')).toBe('V3 to V6');
+    expect(describeFilters({ ...defaultProblemFilters, maxDifficulty: 5 }, 'font')).toBe('Up to 6A');
+    expect(describeFilters({ ...defaultProblemFilters, minDifficulty: 5 }, 'v')).toBe('V3 and up');
   });
 });
 
