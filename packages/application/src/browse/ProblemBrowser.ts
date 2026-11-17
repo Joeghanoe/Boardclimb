@@ -146,6 +146,9 @@ export class ProblemBrowser {
    * One request per configuration at a time.
    */
   refresh(configuration: BoardConfiguration): Promise<RefreshResult> {
+    // A catalog held on the device keeps itself current; copying a page would save problems nobody was shown.
+    if (this.options.catalogs(configuration.manufacturer).queryProblems)
+      return Promise.resolve({ ok: true, fetched: 0, skipped: 0 });
     const configKey = makeConfigKey(configuration);
     const running = this.refreshing.get(configKey);
     if (running) return running;
