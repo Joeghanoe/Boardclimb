@@ -70,6 +70,16 @@ Packages are `@boardclimb/<folder-name>`. Test files sit beside their source as 
 - A new telemetry event or property: the sink allow-list and the design's Observability contract. **checked**: `tests/architecture/design-consistency.test.ts`.
 - A new design token: `packages/design-system` and a contrast check. **checked**: `packages/design-system/src/contrast.test.ts`.
 
+## Development environment
+
+On this Windows workstation, continue development in Ubuntu on WSL2 at
+`/home/joeghanoe/BoardClimb` (`~/BoardClimb`). Run repository edits, installs,
+verification and Expo/Metro there, through `wsl.exe -d Ubuntu -- bash -lc` when
+starting from PowerShell. The checkout under `D:\Prototypes\BoardClimb` is a
+separate Windows copy; changes are not automatically synchronized. Do not run
+against `/mnt/d` or push into the Windows checkout's checked-out branch. Use
+Node from `.node-version` and stable Bun from `packageManager` in `package.json`.
+
 ## Verifying
 
 CI runs `bun install --frozen-lockfile`, then `bun run verify` (`scripts/verify.ts`: format check, lint and `tsc --noEmit` in parallel, then `bun test` including the architecture tests). The agent's quick check is the project verify in `~/.golden-path-harness/projects/` (`--fast` skips the SQLite scale tests); this repo carries no copy of it. The design gate (`tvh greenfield check`) runs in design-only mode because its code checks are C# specific; the repo has no pipeline file yet, so nothing runs in CI: propose one as a diff for a human (CLD.2).

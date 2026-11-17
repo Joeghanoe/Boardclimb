@@ -42,3 +42,18 @@ ADR-0002 chose React Native with TypeScript and a modular monorepo whose package
 ## 5. Amendment: Bun
 
 The product owner asked for Bun as the development runtime for speed, using Bun's native APIs where possible. Measured on this repo before and after: tests 4.4 s to 1.9 s, whole verify about 12 s to 3.7 s. ESLint, Prettier and `tsc` ran no faster on Bun's runtime than on Node (within 0.3 s), so the gain comes from the test runner and from running the static checks in parallel, not from the runtime itself.
+
+## 6. Amendment: stable Linux development baseline (2026-11-17)
+
+The development environment is Ubuntu under WSL2, with the repository on the Linux
+filesystem. Node 24.22.3 is recorded in `.node-version`; `packageManager` now pins
+released Bun 1.4.4 instead of the previous 1.4.5 canary. Frozen installation and the
+full project verify, including SQLite scale tests, passed with these versions.
+The external project harness also passed its design and decision checks; CODE.5
+reported not applicable for this tooling and documentation change.
+
+The hoisted linker remains: its Expo/Metro compatibility rationale still applies
+on Linux. No dependencies or stored layouts change. These checks establish the
+local tooling baseline; they do not establish native or BLE behaviour or a hosted
+CI result. The workflow in `docs/ci-proposal.md` is a proposal for a human to activate
+under CLD.2.
