@@ -4,31 +4,33 @@ import { radii, spacing, touchTarget } from '../tokens/layout';
 import { AppText } from './AppText';
 
 interface StepperProps {
-  value: number;
-  /** Lowest allowed value; the minus control is disabled there. */
-  min?: number;
+  /** What is shown between the controls: a count, or a label such as a grade. */
+  display: string;
+  /** Spoken name of the value, for example "Attempts added today". */
+  valueLabel: string;
   incrementLabel: string;
   decrementLabel: string;
-  /** Spoken name of the value, for example "Attempts today". */
-  valueLabel: string;
   onIncrement: () => void;
   onDecrement: () => void;
-  disabled?: boolean;
+  incrementDisabled?: boolean;
+  decrementDisabled?: boolean;
+  /** Width of the value area; wide labels such as "6A (V3)" need more than a count. */
+  valueWidth?: number;
 }
 
-/** Plus and minus controls with a visible count: the non-long-press way to edit a number (NFR-007). */
+/** Plus and minus controls with a visible value: the non-long-press way to edit a number (NFR-007). */
 export function Stepper({
-  value,
-  min = 0,
+  display,
+  valueLabel,
   incrementLabel,
   decrementLabel,
-  valueLabel,
   onIncrement,
   onDecrement,
-  disabled = false,
+  incrementDisabled = false,
+  decrementDisabled = false,
+  valueWidth = 56,
 }: StepperProps) {
   const { colors } = useTheme();
-  const atMin = value <= min;
   const control = (label: string, symbol: string, onPress: () => void, off: boolean) => (
     <Pressable
       accessibilityRole="button"
@@ -49,25 +51,32 @@ export function Stepper({
   );
   return (
     <View style={styles.row}>
-      {control(decrementLabel, '−', onDecrement, disabled || atMin)}
-      <View accessible accessibilityLabel={`${valueLabel}: ${value}`} style={styles.value}>
-        <AppText variant="display">{String(value)}</AppText>
+      {control(decrementLabel, '−', onDecrement, decrementDisabled)}
+      <View
+        accessible
+        accessibilityLabel={`${valueLabel}: ${display}`}
+        style={[styles.value, { minWidth: valueWidth }]}
+      >
+        <AppText variant="title" style={styles.valueText}>
+          {display}
+        </AppText>
       </View>
-      {control(incrementLabel, '+', onIncrement, disabled)}
+      {control(incrementLabel, '+', onIncrement, incrementDisabled)}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   control: {
-    width: touchTarget + 8,
-    height: touchTarget + 8,
+    width: touchTarget + 4,
+    height: touchTarget + 4,
     borderRadius: radii.md,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   off: { opacity: 0.4 },
-  value: { minWidth: 56, alignItems: 'center' },
+  value: { alignItems: 'center' },
+  valueText: { textAlign: 'center' },
 });

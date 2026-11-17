@@ -1,21 +1,8 @@
-import { Platform } from 'react-native';
 import type { AppContainer } from './AppContainer';
 import { ExpoSqliteDatabase } from './ExpoSqliteDatabase';
-import { createAppContainer } from './createAppContainer';
-import { createSampleTransport } from './createRegistry';
-import { randomIds, systemClock } from './systemEnvironment';
+import { createSampleDeviceContainer } from './createSampleDeviceContainer';
 
-/**
- * Today's app: sample mode (made-up catalogs, scripted radio) until vendor sources and a BLE library are
- * verified. On the web preview records stay in memory; on a phone they go to SQLite.
- */
+/** On a phone, records go to SQLite. The browser preview uses `createDeviceContainer.web.ts`, which has no SQLite. */
 export async function createDeviceContainer(): Promise<AppContainer> {
-  const database = Platform.OS === 'web' ? null : await ExpoSqliteDatabase.open();
-  return createAppContainer({
-    database,
-    transport: createSampleTransport(),
-    clock: systemClock,
-    ids: randomIds,
-    mode: 'sample',
-  });
+  return createSampleDeviceContainer(await ExpoSqliteDatabase.open());
 }

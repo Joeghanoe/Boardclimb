@@ -63,7 +63,7 @@ Packages are `@boardclimb/<folder-name>`. Test files sit beside their source as 
 ## Follow a change across boundaries
 
 - A new board manufacturer: its `catalog-*` and `board-*` packages, the registry in `apps/mobile/src/composition`, the contract suites in `catalog-core` and `bluetooth-core`, the board selector list and the design Components table. **checked**: `tests/architecture/adapter-registry.test.ts` (every adapter package is registered and runs both contract suites).
-- A new error code: the code enum in its core package and a row in the design's Failure model. **checked**: `tests/architecture/design-consistency.test.ts` (every code appears in `docs/solution-design.md`).
+- A new error code: the code enum in its core package, a row in the design's Failure model, and the climber's wording in `apps/mobile/src/screens/presentation/describe*Error.ts`. **checked**: `tests/architecture/design-consistency.test.ts` (every code appears in `docs/solution-design.md`) and the type-checker (the wording maps are exhaustive `Record`s; `presentation.test.ts` rejects engineering words).
 - A new SQLite column or table: a numbered migration, `SqlLogStore` or cache queries, the ADR-0003 layout table and a migration test from the previous version. **checked**: `packages/storage-local/src/migrations.test.ts`.
 - A new import between packages: the dependency direction above. **checked**: `tests/architecture/dependency-boundaries.test.ts`.
 - A new use case that can call `BoardController.lightUp`: only `lightUp` may. **checked**: `packages/application/src/no-passive-lighting.test.ts`.

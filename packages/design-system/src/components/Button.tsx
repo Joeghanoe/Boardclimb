@@ -6,6 +6,8 @@ import { AppText } from './AppText';
 interface ButtonProps {
   label: string;
   onPress: () => void;
+  /** A shortcut only: whatever it does must also be reachable by a visible control (NFR-007). */
+  onLongPress?: () => void;
   variant?: 'primary' | 'secondary' | 'danger';
   /** Large buttons are the main action on a screen. */
   large?: boolean;
@@ -19,6 +21,7 @@ interface ButtonProps {
 export function Button({
   label,
   onPress,
+  onLongPress,
   variant = 'secondary',
   large = false,
   disabled = false,
@@ -42,6 +45,7 @@ export function Button({
       {...(testID === undefined ? {} : { testID })}
       disabled={inactive}
       onPress={onPress}
+      {...(onLongPress === undefined ? {} : { onLongPress })}
       style={({ pressed }) => [
         styles.base,
         large && styles.large,

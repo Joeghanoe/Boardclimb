@@ -1,3 +1,11 @@
 {
-  "plugins": ["expo-sqlite", "expo-status-bar"]
+  "expo": {
+    "name": "BoardClimb",
+    "slug": "boardclimb",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-sqlite", "expo-status-bar"],
+    "web": { "bundler": "metro", "output": "single" }
+  }
 }

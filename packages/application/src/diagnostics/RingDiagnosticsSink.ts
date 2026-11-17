@@ -10,6 +10,10 @@ export class RingDiagnosticsSink implements DiagnosticsSink {
     private enabled = false,
   ) {}
 
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
     if (!enabled) this.events.length = 0;
