@@ -100,3 +100,39 @@ perform physical iPhone testing. No credentials, accounts or backend were added.
 Optional/deferred: native backup/restore, live sync, accounts/backends and TopLogger
 integration are not MVP prerequisites. History remains on this phone; no cross-device
 transfer or tested backup guarantee is claimed.
+
+## Final browser assessment
+
+Final independent assessment: **124/14 = 8.857142857142858 (8.9/10)**, meeting the
+8/10 target with no observed blockers or confirmed accessibility defects in the
+synthetic browser scope. All 112 current originals were inspected. The fitted map
+measures ratio 0.555564 against the sample board's 10/18 = 0.555556 at every viewport
+and scheme. Final capture comparison: 0 new/increased findings, 0 remaining built-in
+findings at each width; axe, screen-reader and native checks are still not claimed.
+
+| UX pillar | Score |
+| --- | ---: |
+| User centricity | 9 |
+| Clarity and simplicity | 9 |
+| Consistency | 9 |
+| Feedback | 9 |
+| Accessibility and inclusivity | 9 |
+| Visual hierarchy | 9 |
+| Usability | 9 |
+| Flexibility and efficiency | 7 |
+| Aesthetic minimalism | 9 |
+| Error prevention and recovery | 9 |
+| Mobile responsiveness | 9 |
+| Task-oriented design | 9 |
+| Learnability | 9 |
+| User control and freedom | 9 |
+
+Score history: initial evidence incomplete; subsequent 8.5 and 8.3 assessments;
+proportional-fit refinement 8.9. Three UI refinement rounds used. Remaining UX
+quality observation: choosing 6B–7A from Any takes 21 stepper presses. A direct grade
+picker is a follow-up efficiency improvement; functional filtering is not blocked,
+and saved filters persist. This finding is not hardware evidence or release approval.
+
+The full final report is retained externally as
+`reviews/BoardClimb/2026-11-17-proportional-map-review.md` in the workstation harness
+cache; the source/interaction/capture scope and all 14 assessments are recorded there.
