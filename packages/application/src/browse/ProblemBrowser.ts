@@ -39,16 +39,17 @@ export class ProblemBrowser {
   async browse(
     configuration: BoardConfiguration,
     filters: ProblemFilters,
-    after: number | null,
+    after: string | null,
   ): Promise<BrowsePage> {
     const { cache } = this.options;
     const catalog = this.options.catalogs(configuration.manufacturer);
     const configKey = makeConfigKey(configuration);
+    if (catalog.queryProblems) return this.browseOnDevice(configuration, catalog, filters, after);
     const query = {
       configKey,
       filters,
       providerHasRatings: catalog.capabilities().ratings,
-      after,
+      after: after === null ? null : Number(after),
       limit: this.pageSize,
     };
 
@@ -70,7 +71,7 @@ export class ProblemBrowser {
 
     return {
       items: page.items,
-      next: page.last,
+      next: page.last === null ? null : String(page.last),
       hasMore: page.items.length === this.pageSize || !state?.exhausted,
       freshness: notice !== null ? 'offline' : fetched > 0 ? 'fresh' : 'cached',
       notice,
@@ -78,22 +79,66 @@ export class ProblemBrowser {
   }
 
   /** Problem-first discovery of downloaded problems from all manufacturers; never fetches or lights. */
-  async browseDownloaded(filters: ProblemFilters, after: number | null, search = ''): Promise<BrowsePage> {
+  async browseDownloaded(filters: ProblemFilters, after: string | null, search = ''): Promise<BrowsePage> {
     const page = await this.options.cache.listProblems({
       configKey: null,
       filters,
       providerHasRatings: true,
-      after,
+      after: after === null ? null : Number(after),
       limit: this.pageSize,
       search,
     });
     return {
       items: page.items,
-      next: page.last,
+      next: page.last === null ? null : String(page.last),
       hasMore: page.items.length === this.pageSize,
       freshness: 'cached',
       notice: null,
     };
+  }
+
+  /**
+   * A catalog held on the device answers the filtered page itself: one query, no copying the whole catalog to
+   * find the few problems a narrow filter allows. The page is still saved, so it appears under Downloaded and
+   * opens offline. If the catalog cannot be read, what was saved before is shown with a notice.
+   */
+  private async browseOnDevice(
+    configuration: BoardConfiguration,
+    catalog: BoardCatalog,
+    filters: ProblemFilters,
+    after: string | null,
+  ): Promise<BrowsePage> {
+    const configKey = makeConfigKey(configuration);
+    const started = this.options.clock.now().getTime();
+    try {
+      const result = await catalog.queryProblems!(
+        configuration,
+        filters,
+        { pageSize: this.pageSize },
+        after ?? undefined,
+      );
+      await this.options.cache.upsertSummaries(configKey, result.items);
+      this.report(configuration, result.items.length, result.skipped, null, started);
+      return {
+        items: result.items,
+        next: result.nextCursor,
+        hasMore: result.nextCursor !== null,
+        freshness: 'fresh',
+        notice: null,
+      };
+    } catch (error) {
+      this.report(configuration, 0, 0, codeOf(error), started);
+      if (after !== null)
+        return { items: [], next: null, hasMore: false, freshness: 'offline', notice: codeOf(error) };
+      const saved = await this.options.cache.listProblems({
+        configKey,
+        filters,
+        providerHasRatings: catalog.capabilities().ratings,
+        after: null,
+        limit: this.pageSize,
+      });
+      return { items: saved.items, next: null, hasMore: false, freshness: 'offline', notice: codeOf(error) };
+    }
   }
 
   /**

@@ -4,8 +4,8 @@ import type { Freshness } from './Freshness';
 
 export interface BrowsePage {
   items: ProblemSummary[];
-  /** Pass back as `after` for the next page. */
-  next: number | null;
+  /** Opaque: pass back as `after` for the next page. */
+  next: string | null;
   /** False only when the provider said it has nothing more and the cache has been read to the end. */
   hasMore: boolean;
   freshness: Freshness;

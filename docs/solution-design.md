@@ -67,6 +67,18 @@ Catalog metadata is bundled, so native board/layout selection works offline. Dow
 problem-first browsing searches cached problems across all previously browsed layouts;
 it does not search unseen remote catalogs.
 
+**Filtered browsing on the device.** A source that holds its whole catalog on the phone
+(the snapshot source) answers a filtered page itself (`ProviderSource.queryProblemPage`,
+exposed as the optional `BoardCatalog.queryProblems`): one SQL query per page, grade and
+rating applied in the query, most-climbed first, then problems nobody has graded at that
+angle (only without grade or rating filters). `SourceBackedCatalog` re-checks every item
+against `matchesProblemFilters`. Only the shown page is saved to the cache, so it appears
+under Downloaded and opens offline. Reason: copying the catalog 50 problems at a time and
+filtering afterwards needed about 67,000 problems per screen for one grade at 70° (225
+matches among 303,675), so the list kept loading. The index `boardclimb_browse` is added
+to each downloaded snapshot once (`SNAPSHOT_BROWSE_INDEX`). Sources without this ability
+keep the copy-then-filter path. Browse cursors are opaque strings.
+
 ## Data flow and stored layout
 
 Full layout and reasoning: ADR-0003. Summary:

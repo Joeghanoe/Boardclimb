@@ -140,6 +140,9 @@ mock.module('expo-sqlite', () => ({
       getAllAsync: async <T>(sql: string, params: readonly (string | number | null)[] = []) =>
         db.query(sql).all(...params) as T[],
       getFirstAsync: async <T>(sql: string) => db.query(sql).get() as T,
+      execAsync: async (sql: string) => {
+        db.run(sql);
+      },
       closeAsync: async () => {
         db.close();
         state.closed = true;
@@ -222,7 +225,21 @@ it('FR-006: an HTTP-decoded SQLite download finishes copying before validation a
   await old.release?.();
   await tick();
   const filename = `kilter-1-${Date.parse(builtAt)}.db`;
-  expect(readFileSync(join(directory, 'catalog-snapshots', filename))).toEqual(fixture);
+  // The whole download arrived (every climb), and the browse index was added before it was marked complete.
+  const installedFile = new Database(join(directory, 'catalog-snapshots', filename), { readonly: true });
+  const original = new Database(
+    join(import.meta.dir, '../../../../packages/provider-snapshots/fixtures/kilter.db'),
+    { readonly: true },
+  );
+  const climbs = (db: Database) => db.query('SELECT uuid FROM board_climbs ORDER BY uuid').all();
+  expect(climbs(installedFile)).toEqual(climbs(original));
+  expect(
+    installedFile
+      .query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'boardclimb_browse'")
+      .all(),
+  ).toHaveLength(1);
+  installedFile.close();
+  original.close();
   downloadFails = true;
   const restarted = new DeviceSnapshotReader(() => Date.parse('2026-11-22T08:00:00Z'));
   const installed = await restarted.open('kilter', 1);
