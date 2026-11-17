@@ -17,6 +17,8 @@ import type {
 import hardware from '../data/hardware.json';
 import outlineData from '../data/hold-outlines.json';
 import type { SnapshotReader } from './SnapshotReader';
+import type { HardwareIndex } from './HardwareIndex';
+import { indexHardware } from './indexHardware';
 
 interface ClimbRow {
   uuid: string;
@@ -51,10 +53,14 @@ export class SnapshotProviderSource implements ProviderSource {
     supportedGradeSystems: ['font'],
     deltaSync: false,
   };
+  private readonly index: HardwareIndex;
+
   constructor(
     private readonly manufacturer: Manufacturer,
     private readonly reader: SnapshotReader,
-  ) {}
+  ) {
+    this.index = indexHardware(manufacturer);
+  }
 
   async fetchBoards(): Promise<BoardModel[]> {
     return hardware.products
@@ -63,37 +69,9 @@ export class SnapshotProviderSource implements ProviderSource {
   }
 
   async fetchConfigurations(boardId: string): Promise<BoardConfiguration[]> {
-    const configs: BoardConfiguration[] = [];
-    for (const layout of hardware.layouts.filter(
-      (l) => l.board_type === this.manufacturer && String(l.product_id) === boardId,
-    )) {
-      for (const size of hardware.sizes.filter(
-        (s) => s.board_type === this.manufacturer && String(s.product_id) === boardId,
-      )) {
-        if (
-          !hardware.combinations.some(
-            (c) =>
-              c.board_type === this.manufacturer &&
-              c.layout_id === layout.id &&
-              c.product_size_id === size.id,
-          )
-        )
-          continue;
-        const angles =
-          this.manufacturer === 'moonboard'
-            ? [25, 40]
-            : [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70];
-        for (const angle of angles)
-          configs.push({
-            id: `bs-${layout.id}-${size.id}-${angle}`,
-            boardId,
-            manufacturer: this.manufacturer,
-            name: `${layout.name} · ${size.name}`,
-            angleDegrees: angle,
-          });
-      }
-    }
-    return configs;
+    return (this.index.configurationsByBoard.get(boardId) ?? []).map((configuration) => ({
+      ...configuration,
+    }));
   }
 
   /** Bundled full-layout geometry, available without downloading a problem catalog. */
@@ -123,7 +101,7 @@ export class SnapshotProviderSource implements ProviderSource {
         }),
       };
     }
-    const grid = hardware.sizes.find((row) => row.board_type === this.manufacturer && row.id === size)!;
+    const grid = this.index.sizes.get(size)!;
     const bounds = {
       left: grid.edge_left,
       right: grid.edge_right,
@@ -132,12 +110,10 @@ export class SnapshotProviderSource implements ProviderSource {
     };
     return {
       bounds,
-      holds: hardware.placements
-        .filter(
+      holds: this.index
+        .placements(layout, size)
+        .all.filter(
           (point) =>
-            point.board_type === this.manufacturer &&
-            point.layout_id === layout &&
-            point.product_size_id === size &&
             point.x > bounds.left &&
             point.x < bounds.right &&
             point.y > bounds.bottom &&
@@ -160,16 +136,13 @@ export class SnapshotProviderSource implements ProviderSource {
     const layout = Number(l),
       size = Number(s),
       angle = Number(a);
-    const model = hardware.layouts.find((x) => x.board_type === this.manufacturer && x.id === layout);
-    if (!model || !(await this.fetchConfigurations(String(model.product_id))).some((c) => c.id === id))
+    if (!this.index.configurationIds.has(id))
       throw new CatalogError('not_found', 'That layout is not available.');
     return { layout, size, angle };
   }
 
   private summary(row: ClimbRow): ProviderProblemSummaryRecord {
-    const grade = hardware.grades.find(
-      (g) => g.board_type === this.manufacturer && g.difficulty === Math.round(row.display_difficulty ?? -1),
-    );
+    const grade = this.index.gradesByDifficulty.get(Math.round(row.display_difficulty ?? -1));
     return {
       id: row.uuid,
       name: row.name,
@@ -308,6 +281,7 @@ export class SnapshotProviderSource implements ProviderSource {
     if (!row) throw new CatalogError('not_found', 'That problem is not in this layout.');
     if (!/^(p\d+r\d+)+$/.test(row.frames))
       throw new CatalogError('schema_mismatch', 'The hold sequence cannot be read.');
+    const placements = this.index.placements(layout, size).byId;
     const holds = row.frames
       .split('p')
       .filter(Boolean)
@@ -331,14 +305,8 @@ export class SnapshotProviderSource implements ProviderSource {
             y: Math.floor((placement - 1) / 11),
           };
         }
-        const point = hardware.placements.find(
-          (p) =>
-            p.board_type === this.manufacturer &&
-            p.layout_id === layout &&
-            p.product_size_id === size &&
-            p.id === placement,
-        );
-        const definition = hardware.roles.find((r) => r.board_type === this.manufacturer && r.id === role);
+        const point = placement === undefined ? undefined : placements.get(placement);
+        const definition = role === undefined ? undefined : this.index.roles.get(role);
         const roles: Record<string, string> = {
           start: 'start',
           middle: 'hand',
@@ -356,7 +324,7 @@ export class SnapshotProviderSource implements ProviderSource {
           ledColor: definition.led_color,
         };
       });
-    const grid = hardware.sizes.find((s) => s.board_type === this.manufacturer && s.id === size)!;
+    const grid = this.index.sizes.get(size)!;
     const bounds =
       this.manufacturer === 'moonboard'
         ? { left: 0, right: 10, bottom: 0, top: layout === 6 || layout === 7 ? 11 : 17 }
