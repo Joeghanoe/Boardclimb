@@ -1,0 +1,15 @@
+# Kilter controller: open spike
+
+Status: **no verified Kilter BLE protocol.** By default `createKilterController` recognises no device and `lightUp`
+answers `protocol_unverified`. `sampleLedEncoder` is not a vendor protocol (ADR-0002 section 7).
+
+To finish, with a physical Kilter board (ADR-0002 A1, A4, A5, A7):
+
+1. Find a verified source for the advertisement format and LED command layout (an open implementation at a pinned
+   revision with its licence, or captures from the owner's own board). Record the source and date.
+2. Implement a `DeviceMatcher` (what a Kilter controller advertises, and which configuration it implies, if any)
+   and a `LedEncoder` (holds to bytes, including frame splitting). Pass them to `createKilterController`.
+3. Test on hardware: connect time, light time, two-phone behaviour (simultaneous or takeover), phone lock and
+   reconnect. Update `getCapabilities()` from 'unknown' only for what was observed, and record the firmware.
+4. Choose the BLE library for `BleTransport` in its own ADR (ADR-0004 risks).
+5. Add the licensing row in `docs/licensing-inventory.md` (NFR-011).

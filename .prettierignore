@@ -1,0 +1,8 @@
+node_modules
+bun.lock
+dist
+.expo
+artifacts
+REPORT.md
+docs/adr/ADR-0001-*.md
+docs/adr/ADR-0002-*.md

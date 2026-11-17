@@ -1,0 +1,6 @@
+[install]
+# Metro and Expo are tested against a hoisted node_modules layout.
+linker = "hoisted"
+
+[test]
+timeout = 30000
