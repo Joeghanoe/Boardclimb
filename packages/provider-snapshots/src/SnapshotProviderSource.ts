@@ -83,10 +83,11 @@ export class SnapshotProviderSource implements ProviderSource {
     if (this.manufacturer === 'moonboard') {
       const mini = layout === 6 || layout === 7;
       const rows = mini ? 12 : 18;
-      const width = 650,
-        height = mini ? 694 : 1000;
-      const margins = mini ? [0.1047, 0.0508, 0.0793, 0.0571] : [0.1, 0.05, 0.06, 0.04];
-      const [left, right, top, bottom] = margins as [number, number, number, number];
+      // The holds sit on a square 11-wide grid (hold 1 bottom left, 11 across). The board is just that grid
+      // with half a cell of edge on every side, so it is centred and drawn as large as the screen allows.
+      const cell = 60;
+      const width = 11 * cell + cell;
+      const height = rows * cell + cell;
       return {
         bounds: { left: 0, right: width, bottom: 0, top: height },
         holds: Object.entries(outlines).map(([holdId, outline]) => {
@@ -94,9 +95,9 @@ export class SnapshotProviderSource implements ProviderSource {
           return {
             holdId,
             outline,
-            x: (left + (((index % 11) + 0.5) / 11) * (1 - left - right)) * width,
-            y: height - (top + ((rows - Math.floor(index / 11) - 0.5) / rows) * (1 - top - bottom)) * height,
-            radius: Math.min(width / 11, height / rows) * 0.525,
+            x: ((index % 11) + 1) * cell,
+            y: (Math.floor(index / 11) + 1) * cell,
+            radius: cell * 0.55,
           };
         }),
       };

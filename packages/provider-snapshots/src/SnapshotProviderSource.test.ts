@@ -171,6 +171,26 @@ it.each(['kilter', 'moonboard', 'tension'] as const)(
   },
 );
 
+it('UI-1: a MoonBoard is its 11-wide hold grid with an equal edge on every side', async () => {
+  const { db, source } = subject('moonboard');
+  db.close();
+  for (const configuration of await source.fetchConfigurations('1')) {
+    const { bounds, holds } = await source.fetchBoardGeometry(configuration.id);
+    const edge = (bounds.right - bounds.left) / 12;
+    for (const hold of holds) {
+      expect(hold.x).toBeGreaterThanOrEqual(bounds.left + edge);
+      expect(hold.x).toBeLessThanOrEqual(bounds.right - edge);
+      expect(hold.y).toBeGreaterThanOrEqual(bounds.bottom + edge);
+      expect(hold.y).toBeLessThanOrEqual(bounds.top - edge);
+    }
+    // A layout with every cell filled reaches the edge on both sides, so the grid is centred.
+    if (holds.length === 198) {
+      expect(Math.min(...holds.map((hold) => hold.x))).toBe(bounds.left + edge);
+      expect(Math.max(...holds.map((hold) => hold.x))).toBe(bounds.right - edge);
+    }
+  }
+});
+
 describe('FR-006/FR-007: filtered browsing straight from the downloaded catalog', () => {
   async function everything(filters = defaultProblemFilters) {
     const { catalog, configuration } = subject('kilter');
