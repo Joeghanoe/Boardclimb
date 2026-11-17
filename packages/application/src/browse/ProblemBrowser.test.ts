@@ -240,6 +240,12 @@ describe('a catalog held on the device answers filtered pages itself (FR-006, FR
     expect(downloaded.items.map((item) => item.key)).toEqual(page.items.map((item) => item.key));
   });
 
+  it('pull to refresh saves nothing the climber was not shown', async () => {
+    const { browser, configuration } = onDevice();
+    expect(await browser.refresh(configuration)).toEqual({ ok: true, fetched: 0, skipped: 0 });
+    expect((await browser.browseDownloaded(defaultProblemFilters, null)).items).toEqual([]);
+  });
+
   it('shows nothing new but says why when the catalog cannot be read', async () => {
     const { browser, configuration, filters } = onDevice({ failing: true });
     const page = await browser.browse(configuration, filters, null);

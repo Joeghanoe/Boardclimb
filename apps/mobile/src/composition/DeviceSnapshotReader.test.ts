@@ -249,3 +249,29 @@ it('FR-006: an HTTP-decoded SQLite download finishes copying before validation a
   downloadFails = false;
   decodedDownload = false;
 });
+
+it('FR-006: a catalog downloaded before filtered browsing gets the browse index when it is opened', async () => {
+  const snapshots = join(directory, 'catalog-snapshots');
+  const filename = 'tension-1-1000.db';
+  copyFileSync(
+    join(import.meta.dir, '../../../../packages/provider-snapshots/fixtures/kilter.db'),
+    join(snapshots, filename),
+  );
+  writeFileSync(join(snapshots, `${filename}.complete`), filename);
+  const browseIndex = (file: string) => {
+    const db = new Database(file, { readonly: true });
+    const found = db
+      .query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'boardclimb_browse'")
+      .all();
+    db.close();
+    return found;
+  };
+  expect(browseIndex(join(snapshots, filename))).toHaveLength(0);
+  downloadFails = true;
+  const reader = new DeviceSnapshotReader(() => Date.parse('2026-11-23T08:00:00Z'));
+  const connection = await reader.open('tension', 1);
+  expect(browseIndex(join(snapshots, filename))).toHaveLength(1);
+  await connection.release?.();
+  await tick();
+  downloadFails = false;
+});
