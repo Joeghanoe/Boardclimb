@@ -93,6 +93,37 @@ describe('recorded BoardSesh catalogs (FR-001, FR-005, FR-006)', () => {
     }
   });
 
+  it('FR-005 accepts exactly the listed configuration ids for every manufacturer', async () => {
+    for (const manufacturer of ['kilter', 'moonboard', 'tension'] as const) {
+      const source = new SnapshotProviderSource(manufacturer, {
+        open: async () => ({ all: async () => [] }),
+      });
+      const listed = new Set<string>();
+      for (const model of await source.fetchBoards())
+        for (const configuration of await source.fetchConfigurations(model.id)) {
+          expect(configuration.boardId).toBe(model.id);
+          listed.add(configuration.id);
+        }
+      expect(listed.size).toBeGreaterThan(0);
+      for (const id of listed) expect((await source.fetchProblemPage(id, null, 1)).records).toEqual([]);
+      const unlisted = [...listed].map((id) => id.replace(/-(\d+)$/, '-1')).filter((id) => !listed.has(id));
+      expect(unlisted.length).toBeGreaterThan(0);
+      for (const id of [...unlisted, 'bs-999-1-40', 'bs-1-999-40', '1-7-40'])
+        await expect(source.fetchProblemPage(id, null, 1)).rejects.toMatchObject({ code: 'not_found' });
+    }
+  });
+
+  it('hands out configurations a caller may change without changing the catalog', async () => {
+    const source = new SnapshotProviderSource('kilter', { open: async () => ({ all: async () => [] }) });
+    const first = await source.fetchConfigurations('1');
+    first[0]!.name = 'changed';
+    first.length = 0;
+    const again = await source.fetchConfigurations('1');
+    expect(again.length).toBeGreaterThan(0);
+    expect(again[0]!.name).not.toBe('changed');
+    expect(await source.fetchConfigurations('999')).toEqual([]);
+  });
+
   it('rejects a changed manifest, stale privacy format, or an off-origin download', () => {
     const entry = {
       boardType: 'kilter',

@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, G, Polygon, Rect } from 'react-native-svg';
 import type { BoardGeometry, Problem } from '@boardclimb/domain';
 import { AppText, ROLE_COLORS } from '@boardclimb/design-system';
+import { boardHoldShapes } from './presentation/boardHoldShapes';
 import { fitBoardCanvas } from './presentation/fitBoardCanvas';
 
 interface BoardMapProps {
@@ -17,6 +18,11 @@ interface BoardMapProps {
 export function BoardMap({ problem, geometry, maxHeight = 500, maxWidth }: BoardMapProps) {
   const [availableWidth, setAvailableWidth] = useState(300);
   const roles = useMemo(() => new Map(problem.holds.map((hold) => [hold.holdId, hold.role])), [problem]);
+  const shapes = useMemo(() => (geometry ? boardHoldShapes(geometry) : []), [geometry]);
+  const missing = useMemo(() => {
+    const known = new Set(geometry?.holds.map((hold) => hold.holdId));
+    return problem.holds.filter((hold) => !known.has(hold.holdId)).length;
+  }, [geometry, problem]);
   if (!geometry?.holds.length)
     return (
       <View style={styles.empty}>
@@ -28,8 +34,6 @@ export function BoardMap({ problem, geometry, maxHeight = 500, maxWidth }: Board
   const boardWidth = bounds.right - bounds.left;
   const boardHeight = bounds.top - bounds.bottom;
   const size = fitBoardCanvas(maxWidth ?? availableWidth, maxHeight, bounds);
-  const known = new Set(holds.map((hold) => hold.holdId));
-  const missing = problem.holds.filter((hold) => !known.has(hold.holdId)).length;
   return (
     <View
       style={styles.frame}
@@ -49,28 +53,13 @@ export function BoardMap({ problem, geometry, maxHeight = 500, maxWidth }: Board
           rx={Math.min(boardWidth, boardHeight) * 0.045}
           fill="#1C1C1F"
         />
-        {holds.map((hold) => {
-          const x = hold.x - bounds.left,
-            y = bounds.top - hold.y;
-          const role = roles.get(hold.holdId);
-          const points = hold.outline;
-          const radius = hold.radius;
-          const extent = points
-            ? Math.max(
-                0.6,
-                ...Array.from({ length: points.length / 2 }, (_, index) =>
-                  Math.hypot(points[index * 2]!, points[index * 2 + 1]!),
-                ),
-              )
-            : 0.55;
+        {shapes.map(({ holdId, x, y, radius, points, extent }) => {
+          const role = roles.get(holdId);
           return (
-            <G key={hold.holdId}>
-              {points ? (
+            <G key={holdId}>
+              {points !== null ? (
                 <Polygon
-                  points={Array.from(
-                    { length: points.length / 2 },
-                    (_, index) => `${x + points[index * 2]! * radius},${y + points[index * 2 + 1]! * radius}`,
-                  ).join(' ')}
+                  points={points}
                   fill={role ? '#B3B7B3' : '#858A85'}
                   stroke="#454A45"
                   strokeWidth={radius * 0.06}
