@@ -5,7 +5,7 @@ import { catalogErrorCode } from './presentation/catalogErrorCode';
 
 interface ListState {
   items: ProblemSummary[];
-  next: number | null;
+  next: string | null;
   hasMore: boolean;
   notice: CatalogErrorCode | null;
   loading: boolean;

@@ -6,7 +6,7 @@ import {
   SourceBackedCatalog,
   buildSampleProviderData,
 } from '@boardclimb/catalog-core';
-import type { BoardCatalog } from '@boardclimb/catalog-core';
+import type { BoardCatalog, ProviderSource } from '@boardclimb/catalog-core';
 import { defaultProblemFilters, makeGrade, matchesProblemFilters } from '@boardclimb/domain';
 import type { BoardConfiguration, Manufacturer } from '@boardclimb/domain';
 import { DIAGNOSTIC_FIELDS } from '../ports/DiagnosticEvent';
@@ -73,7 +73,7 @@ describe('incremental browsing with a cache (FR-006, AC-016)', () => {
 
   it('reaches the end exactly once and then says there is no more', async () => {
     const { browser, configuration } = setup({ count: 25 });
-    let after: number | null = null;
+    let after: string | null = null;
     const seen: string[] = [];
     let hasMore = true;
     for (let guard = 0; hasMore && guard < 10; guard += 1) {
@@ -124,7 +124,7 @@ describe('a background refresh never rewinds paging (FR-006)', () => {
   it('keeps the download position after a refresh, so scrolling on reaches new problems', async () => {
     // Deeper than one browse call may fetch (20 provider pages), as a real catalog is.
     const { browser, configuration } = setup({ count: 400, pageSize: 5 });
-    let after: number | null = null;
+    let after: string | null = null;
     const seen = new Set<string>();
     for (let page = 0; page < 30; page += 1) {
       const result = await browser.browse(configuration, defaultProblemFilters, after);
@@ -150,7 +150,7 @@ describe('a background refresh never rewinds paging (FR-006)', () => {
         true,
       ),
     ).length;
-    let after: number | null = null;
+    let after: string | null = null;
     let total = 0;
     let hasMore = true;
     for (let guard = 0; hasMore && guard < 200; guard += 1) {
@@ -162,6 +162,93 @@ describe('a background refresh never rewinds paging (FR-006)', () => {
     }
     expect(total).toBe(expected);
     expect(hasMore).toBe(false);
+  });
+});
+
+describe('a catalog held on the device answers filtered pages itself (FR-006, FR-007)', () => {
+  function onDevice(options: { failing?: boolean } = {}) {
+    const data = buildSampleProviderData({
+      manufacturer: 'kilter',
+      gradeSystem: 'v',
+      rated: true,
+      problemsPerConfiguration: 120,
+      boards: [{ id: 'b', name: 'B', configurations: [{ id: 'cfg', name: 'Cfg', angleDegrees: 40 }] }],
+    });
+    const base = new InMemoryProviderSource(data, {
+      pagination: 'cursor',
+      ratings: true,
+      supportedGradeSystems: ['v'],
+      deltaSync: false,
+    });
+    const source: ProviderSource = {
+      capabilities: base.capabilities,
+      fetchBoards: () => base.fetchBoards(),
+      fetchConfigurations: (boardId) => base.fetchConfigurations(boardId),
+      fetchProblem: (configurationId, id) => base.fetchProblem(configurationId, id),
+      fetchProblemPage: () => Promise.reject(new Error('browsing must not copy the catalog page by page')),
+      queryProblemPage: async (configurationId, filters, cursor, pageSize) => {
+        if (options.failing) throw new CatalogError('network_unavailable', 'Catalog not downloaded yet.');
+        const matching = (data.problems[configurationId] ?? []).filter((record) =>
+          matchesProblemFilters(
+            { grade: makeGrade('v', record.gradeLabel), rating: record.rating },
+            filters,
+            true,
+          ),
+        );
+        const start = cursor === null ? 0 : Number(cursor);
+        const records = matching.slice(start, start + pageSize);
+        return { records, nextCursor: start + pageSize < matching.length ? String(start + pageSize) : null };
+      },
+    };
+    const browser = new ProblemBrowser({
+      catalogs: () => new SourceBackedCatalog('kilter', source),
+      cache: new InMemoryProblemCache(),
+      clock: new FixedClock(new Date('2026-11-16T10:00:00Z')),
+      diagnostics: new RecordingDiagnostics(),
+      pageSize: 10,
+    });
+    const filters = { ...defaultProblemFilters, minDifficulty: makeGrade('v', 'V5').difficulty };
+    const expected = (data.problems['cfg'] ?? []).filter((record) =>
+      matchesProblemFilters(
+        { grade: makeGrade('v', record.gradeLabel), rating: record.rating },
+        filters,
+        true,
+      ),
+    );
+    return { browser, configuration: data.configurations[0] as BoardConfiguration, filters, expected };
+  }
+
+  it('reaches every matching problem, page by page, without copying the catalog', async () => {
+    const { browser, configuration, filters, expected } = onDevice();
+    const seen: string[] = [];
+    let after: string | null = null;
+    for (let guard = 0; guard < 50; guard += 1) {
+      const page = await browser.browse(configuration, filters, after);
+      expect(page).toMatchObject({ freshness: 'fresh', notice: null });
+      seen.push(...page.items.map((item) => item.providerProblemId));
+      if (!page.hasMore) break;
+      after = page.next;
+    }
+    expect(expected.length).toBeGreaterThan(10);
+    expect(seen).toEqual(expected.map((record) => record.id));
+  });
+
+  it('keeps what it showed, so it appears under Downloaded and opens offline', async () => {
+    const { browser, configuration, filters } = onDevice();
+    const page = await browser.browse(configuration, filters, null);
+    const downloaded = await browser.browseDownloaded(filters, null);
+    expect(downloaded.items.map((item) => item.key)).toEqual(page.items.map((item) => item.key));
+  });
+
+  it('shows nothing new but says why when the catalog cannot be read', async () => {
+    const { browser, configuration, filters } = onDevice({ failing: true });
+    const page = await browser.browse(configuration, filters, null);
+    expect(page).toMatchObject({
+      items: [],
+      hasMore: false,
+      freshness: 'offline',
+      notice: 'network_unavailable',
+    });
   });
 });
 

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import { join } from 'node:path';
 import { SourceBackedCatalog } from '@boardclimb/catalog-core';
-import type { BoardConfiguration, Manufacturer } from '@boardclimb/domain';
+import { defaultProblemFilters, makeGrade, matchesProblemFilters } from '@boardclimb/domain';
+import type { BoardConfiguration, Manufacturer, ProblemSummary } from '@boardclimb/domain';
 import { SnapshotProviderSource } from './SnapshotProviderSource';
 import type { SnapshotReader } from './SnapshotReader';
 import { parseSnapshotArtifact } from './parseSnapshotArtifact';
@@ -138,3 +139,55 @@ it.each(['kilter', 'moonboard', 'tension'] as const)(
     }
   },
 );
+
+describe('FR-006/FR-007: filtered browsing straight from the downloaded catalog', () => {
+  async function everything(filters = defaultProblemFilters) {
+    const { catalog, configuration } = subject('kilter');
+    const items: ProblemSummary[] = [];
+    let cursor: string | undefined;
+    for (let guard = 0; guard < 100; guard += 1) {
+      const page = await catalog.queryProblems!(configuration, filters, { pageSize: 4 }, cursor);
+      items.push(...page.items);
+      if (page.nextCursor === null) break;
+      cursor = page.nextCursor;
+    }
+    const all: ProblemSummary[] = [];
+    let listCursor: string | undefined;
+    for (let guard = 0; guard < 100; guard += 1) {
+      const page = await catalog.listProblems(configuration, { pageSize: 50 }, listCursor);
+      all.push(...page.items);
+      if (page.nextCursor === null) break;
+      listCursor = page.nextCursor;
+    }
+    return { items, all };
+  }
+
+  it('returns exactly the problems the filter rule allows, each once, graded ones before unrepeated ones', async () => {
+    const { items, all } = await everything();
+    expect(new Set(items.map((item) => item.key)).size).toBe(items.length);
+    expect(items.map((item) => item.key).sort()).toEqual(all.map((item) => item.key).sort());
+    const unrepeated = (item: ProblemSummary) => item.grade.label === 'Not graded';
+    const firstUnrepeated = items.findIndex(unrepeated);
+    expect(firstUnrepeated).toBeGreaterThan(0);
+    expect(items.slice(firstUnrepeated).every(unrepeated)).toBe(true);
+  });
+
+  it('applies a grade range and a minimum rating in the query, matching the domain rule exactly', async () => {
+    const filters = {
+      minDifficulty: makeGrade('font', '6A').difficulty,
+      maxDifficulty: makeGrade('font', '7A').difficulty,
+      minStars: 2,
+    };
+    const { items, all } = await everything(filters);
+    const expected = all.filter((item) => matchesProblemFilters(item, filters, true));
+    expect(expected.length).toBeGreaterThan(0);
+    expect(items.map((item) => item.key).sort()).toEqual(expected.map((item) => item.key).sort());
+  });
+
+  it('refuses a list position it did not issue', async () => {
+    const { catalog, configuration } = subject('kilter');
+    await expect(
+      catalog.queryProblems!(configuration, defaultProblemFilters, { pageSize: 4 }, 'nonsense'),
+    ).rejects.toMatchObject({ code: 'schema_mismatch' });
+  });
+});

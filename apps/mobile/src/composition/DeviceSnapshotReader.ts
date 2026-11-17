@@ -5,6 +5,7 @@ import { fetch } from 'expo/fetch';
 import { Gunzip } from 'fflate';
 import { CatalogError } from '@boardclimb/catalog-core';
 import { parseSnapshotArtifact } from '@boardclimb/provider-snapshots';
+import { SNAPSHOT_BROWSE_INDEX } from '@boardclimb/provider-snapshots';
 import type { SnapshotReader } from '@boardclimb/provider-snapshots';
 
 /** Download complete public datasets to a separate directory; log/cache tables are never replaced. */
@@ -65,6 +66,8 @@ export class DeviceSnapshotReader implements SnapshotReader {
         try {
           cached = await openDatabaseAsync(file.name, { useNewConnection: true }, this.directory.uri);
           await cached.getAllAsync('SELECT uuid FROM board_climbs LIMIT 1');
+          // Files downloaded before browsing used it get the index on first open (once, a second or two).
+          await cached.execAsync(SNAPSHOT_BROWSE_INDEX).catch(() => undefined);
           this.connections.set(key, cached);
           this.filenames.set(cached, file.name);
           break;
@@ -153,6 +156,7 @@ export class DeviceSnapshotReader implements SnapshotReader {
       await db.getAllAsync(
         'SELECT climb_uuid,angle,display_difficulty,quality_average FROM board_climb_stats LIMIT 1',
       );
+      await db.execAsync(SNAPSHOT_BROWSE_INDEX);
       await db.closeAsync();
       db = undefined;
       if (installed.exists) installed.delete();

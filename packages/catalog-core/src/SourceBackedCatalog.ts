@@ -22,13 +22,13 @@ import { toProblem, toProblemSummary } from './mapProviderRecord';
  * provider-shaped leaves this class (CODE.5).
  */
 export class SourceBackedCatalog implements BoardCatalog {
-  readonly queryProblems?: BoardCatalog['queryProblems'];
+  readonly queryProblems: BoardCatalog['queryProblems'];
 
   constructor(
     readonly manufacturer: Manufacturer,
     private readonly source: ProviderSource,
   ) {
-    if (source.queryProblemPage) this.queryProblems = (...args) => this.query(...args);
+    this.queryProblems = source.queryProblemPage ? (...args) => this.query(...args) : undefined;
   }
 
   /** Filtered by the source, then checked against the domain rule so the semantics never drift. */
