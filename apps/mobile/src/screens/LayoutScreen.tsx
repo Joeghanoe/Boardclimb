@@ -12,7 +12,7 @@ import {
   useTheme,
 } from '@boardclimb/design-system';
 import type { AppContainer } from '../composition/AppContainer';
-import { ConfigurationChooser } from './ConfigurationChooser';
+import { ConfigurationSheet } from './ConfigurationSheet';
 import { ModeBanner } from './ModeBanner';
 import { ScreenFrame } from './ScreenFrame';
 import { describeCatalogError } from './presentation/describeCatalogError';
@@ -45,6 +45,14 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
       cancelled = true;
     };
   }, [container]);
+
+  const openBoard = entries
+    ?.flatMap((entry) =>
+      entry.ok
+        ? entry.boards.map((item) => ({ key: `${entry.manufacturer}-${item.board.id}`, ...item }))
+        : [],
+    )
+    .find((item) => item.key === boardKey);
 
   return (
     <ScreenFrame title="Choose your board" eyebrow="Board layout" onBack={onBack}>
@@ -81,62 +89,31 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
               {entry.ok ? (
                 entry.boards.map(({ board, configurations }) => {
                   const key = `${entry.manufacturer}-${board.id}`;
-                  const isExpanded = boardKey === key;
                   const isCurrentBoard =
                     current?.configuration.manufacturer === board.manufacturer &&
                     current?.boardName === board.name;
                   return (
-                    <View
-                      key={board.id}
-                      style={[styles.board, isExpanded && { backgroundColor: colors.surface }]}
-                    >
+                    <View key={board.id} style={styles.board}>
                       <Pressable
                         accessibilityRole="button"
                         accessibilityLabel={`${board.name}, ${configurations.length} layouts${isCurrentBoard ? ', current board' : ''}`}
-                        accessibilityState={{ expanded: isExpanded }}
-                        onPress={() => setBoardKey(isExpanded ? null : key)}
+                        accessibilityHint="Opens the layout and angle choices"
+                        onPress={() => setBoardKey(key)}
                         style={({ pressed }) => [styles.boardRow, pressed && styles.pressed]}
                       >
                         <View style={styles.boardInfo}>
-                          <AppText
-                            variant="label"
-                            style={[styles.boardName, isExpanded ? { color: colors.text } : styles.ink]}
-                          >
+                          <AppText variant="label" style={[styles.boardName, styles.ink]}>
                             {board.name}
                           </AppText>
-                          <AppText
-                            variant="caption"
-                            style={isExpanded ? { color: colors.textMuted } : [styles.ink, styles.soft]}
-                          >
+                          <AppText variant="caption" style={[styles.ink, styles.soft]}>
                             {isCurrentBoard ? 'Current board · ' : ''}
                             {configurations.length} {configurations.length === 1 ? 'layout' : 'layouts'}
                           </AppText>
                         </View>
-                        <View
-                          style={[
-                            styles.arrow,
-                            { backgroundColor: isExpanded ? colors.surfaceMuted : '#151618' },
-                          ]}
-                        >
-                          <Icon
-                            name={isExpanded ? 'chevronDown' : 'arrowUpRight'}
-                            color={isExpanded ? colors.text : '#FFFFFF'}
-                            size={16}
-                            weight={2.6}
-                          />
+                        <View style={[styles.arrow, { backgroundColor: '#151618' }]}>
+                          <Icon name="arrowUpRight" color="#FFFFFF" size={16} weight={2.6} />
                         </View>
                       </Pressable>
-                      {isExpanded ? (
-                        <ConfigurationChooser
-                          configurations={configurations}
-                          selectedId={
-                            current?.configuration.manufacturer === board.manufacturer
-                              ? current.configuration.id
-                              : null
-                          }
-                          onChoose={(configuration) => onChoose({ boardName: board.name, configuration })}
-                        />
-                      ) : null}
                     </View>
                   );
                 })
@@ -156,6 +133,20 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
           );
         })}
       </ScrollView>
+      <ConfigurationSheet
+        visible={openBoard !== undefined}
+        title={openBoard?.board.name ?? ''}
+        configurations={openBoard?.configurations ?? []}
+        selectedId={
+          openBoard && current?.configuration.manufacturer === openBoard.board.manufacturer
+            ? current.configuration.id
+            : null
+        }
+        onChoose={(configuration) => {
+          if (openBoard) onChoose({ boardName: openBoard.board.name, configuration });
+        }}
+        onClose={() => setBoardKey(null)}
+      />
     </ScreenFrame>
   );
 }
