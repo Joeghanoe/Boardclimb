@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { defaultProblemFilters, makeGrade, makeProblemKey } from '@boardclimb/domain';
 import type { Problem, ProblemFilters, ProblemSummary } from '@boardclimb/domain';
-import type { ProblemCache } from '../ProblemCache';
+import type { ProblemCache } from '../cache/ProblemCache';
 
 const CONFIG = 'kilter/cfg';
 

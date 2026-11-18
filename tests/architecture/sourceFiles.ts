@@ -11,7 +11,12 @@ export interface SourceFile {
   text: string;
 }
 
-const PATTERNS = ['apps/*/*.{ts,tsx}', 'apps/*/src/**/*.{ts,tsx}', 'packages/*/src/**/*.{ts,tsx}'];
+const PATTERNS = [
+  'apps/*/*.{ts,tsx}',
+  'apps/*/src/**/*.{ts,tsx}',
+  'packages/*/src/**/*.{ts,tsx}',
+  'packages/*/tests/**/*.{ts,tsx}',
+];
 
 /** Every TypeScript file of every workspace (apps and packages), read once through Bun's file APIs. */
 async function loadSources(): Promise<SourceFile[]> {
@@ -57,5 +62,5 @@ export function importsOf(text: string): string[] {
 }
 
 export function isTestFile(path: string): boolean {
-  return /\.test\.tsx?$/.test(path) || path.includes('/testing/');
+  return /\.test\.tsx?$/.test(path) || path.includes('/testing/') || path.includes('/tests/');
 }

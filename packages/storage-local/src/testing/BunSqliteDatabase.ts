@@ -1,6 +1,6 @@
 import { Database } from 'bun:sqlite';
-import type { SqlDatabase } from '../SqlDatabase';
-import type { SqlValue } from '../SqlValue';
+import type { SqlDatabase } from '../database/SqlDatabase';
+import type { SqlValue } from '../database/SqlValue';
 
 /**
  * Real SQLite through Bun's built-in driver, for layer 0 tests (ADR-0004). It runs the same SQL the device

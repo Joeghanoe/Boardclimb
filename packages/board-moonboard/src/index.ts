@@ -1,4 +1,3 @@
-export * from './createMoonBoardController';
-
-export { matchMoonBoardDevice } from './matchMoonBoardDevice';
-export { MoonBoardLedEncoder } from './MoonBoardLedEncoder';
+export * from './controller/createMoonBoardController';
+export * from './device/matchMoonBoardDevice';
+export * from './lighting/MoonBoardLedEncoder';

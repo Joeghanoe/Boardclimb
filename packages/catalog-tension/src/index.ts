@@ -1,2 +1,2 @@
-export * from './createSampleTensionSource';
-export * from './createTensionCatalog';
+export * from './catalog/createTensionCatalog';
+export * from './source/createSampleTensionSource';

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { makeProblemKey } from '@boardclimb/domain';
 import type { BoardConfiguration, Manufacturer, Problem } from '@boardclimb/domain';
-import type { BoardController } from '../BoardController';
-import type { ScriptedBleTransport } from '../ScriptedBleTransport';
+import type { BoardController } from '../board/BoardController';
+import type { ScriptedBleTransport } from '../bluetooth/ScriptedBleTransport';
 
 export interface BoardControllerContractSubject {
   controller: BoardController;

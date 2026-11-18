@@ -1,2 +1,2 @@
-export * from './createMoonBoardCatalog';
-export * from './createSampleMoonBoardSource';
+export * from './catalog/createMoonBoardCatalog';
+export * from './source/createSampleMoonBoardSource';
