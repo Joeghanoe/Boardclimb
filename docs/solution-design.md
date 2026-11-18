@@ -157,7 +157,8 @@ Untrusted: every provider response (validated into domain types at the adapter e
 - Physical Kilter, MoonBoard and Tension behaviour is unverified. Firmware capabilities,
   multi-phone contention/takeover, lock/reconnect, latency and actual light patterns need
   the iPhone gym run in `docs/iphone-gym-test.md`. Capabilities stay unknown; no readback is claimed.
-- The snapshot mirror (ADR-0006) is built and tested in memory, not deployed. Phones use it only when a
+- The snapshot mirror (ADR-0006) is built and tested in memory, not deployed yet; the deploy workflow runs
+  only once the `snapshot-mirror` environment holds Cloudflare credentials. Phones use it only when a
   build sets `EXPO_PUBLIC_CATALOG_MIRROR_URL`; otherwise they read BoardSesh directly, as before. Whether a
   Worker's `fetch` hands over gzip bytes or decoded SQLite is unverified; the mirror accepts either and
   phones install either. BoardSesh's view on a public mirror is not yet recorded.

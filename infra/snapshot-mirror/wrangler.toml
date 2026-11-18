@@ -1,6 +1,5 @@
-# Snapshot mirror (ADR-0006). A human creates the bucket, attaches the custom domain and deploys:
-#   bunx wrangler@4 r2 bucket create boardclimb-snapshots
-#   bunx wrangler@4 deploy
+# Snapshot mirror (ADR-0006). Deployed by .github/workflows/deploy-snapshot-mirror.yml after a merge to main,
+# or by hand with scripts/deploy.sh; both create the bucket and custom domain when missing.
 name = "boardclimb-snapshot-mirror"
 main = "src/worker.ts"
 compatibility_date = "2026-10-01"
@@ -14,7 +13,7 @@ binding = "SNAPSHOTS"
 bucket_name = "boardclimb-snapshots"
 
 [vars]
-# The bucket's public custom domain, a bare https origin. Set before the first deploy.
+# The bucket's public custom domain; scripts/deploy.sh sets it from MIRROR_DOMAIN.
 PUBLIC_BASE_URL = ""
 
 [limits]

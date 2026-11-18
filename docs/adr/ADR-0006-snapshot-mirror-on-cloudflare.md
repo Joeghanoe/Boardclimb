@@ -68,11 +68,13 @@ without making the files more available.
    day, and the rule that a failed refresh never replaces a good file. Neither host
    receives any user, device or log data. Requests carry no identifiers, cookies or
    tokens.
-5. **Ownership:** the Worker lives in its own workspace (`infra/snapshot-mirror/`, with its
-   `wrangler.toml`). The dependency-boundary test allows it only the manifest rules and
-   keeps it out of the app's composition. A
-   human creates the Cloudflare account, bucket, domain and API token and deploys the
-   Worker (CLD.2). No credential enters the repo or the app.
+5. **Ownership and delivery:** the Worker lives in its own workspace (`infra/snapshot-mirror/`, with its
+   `wrangler.toml`). The dependency-boundary test allows it only the manifest rules and keeps it out of the
+   app's composition. `.github/workflows/deploy-snapshot-mirror.yml` bundles it on pull requests and, after
+   a merge to main, runs `scripts/deploy.sh`: it creates the R2 bucket and custom domain if missing, deploys
+   the Worker and checks the published manifest with the phones' rules. The deploy job runs in the
+   `snapshot-mirror` GitHub environment, which holds the Cloudflare token and can require a reviewer. A human
+   creates the Cloudflare account and token and merges (CLD.2). No credential enters the repo or the app.
 
 ## Consequences
 
