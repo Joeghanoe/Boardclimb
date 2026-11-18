@@ -38,9 +38,9 @@ const styles = StyleSheet.create({
   strip: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.sm + 2,
+    gap: spacing.md,
     borderRadius: radii.md,
-    paddingHorizontal: spacing.md + 2,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
   message: { flex: 1 },
