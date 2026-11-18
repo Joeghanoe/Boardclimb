@@ -18,9 +18,14 @@ const ALLOWED: Record<string, string[]> = {
   'packages/board-moonboard': ['domain', 'bluetooth-core'],
   'packages/board-tension': ['domain', 'bluetooth-core'],
   'packages/storage-local': ['domain', 'catalog-core', 'application'],
+  /** Hosted snapshot mirror (ADR-0006): it shares the phones' manifest rules and nothing else. */
+  'infra/snapshot-mirror': ['provider-snapshots'],
 };
 
-const EVERYTHING = Object.keys(ALLOWED).map((key) => key.replace('packages/', ''));
+/** Composition may name any package, but never the hosted mirror. */
+const EVERYTHING = Object.keys(ALLOWED)
+  .filter((key) => key.startsWith('packages/'))
+  .map((key) => key.replace('packages/', ''));
 /** Screens and presentation: use cases, domain types and the design system, nothing else of ours. */
 const SCREEN_ALLOWED = ['application', 'domain', 'design-system'];
 const FORBIDDEN_IN_SCREENS = ['expo-sqlite', 'react-native-ble-plx', 'bun:sqlite', 'node:sqlite'];
@@ -28,7 +33,7 @@ const FORBIDDEN_IN_SCREENS = ['expo-sqlite', 'react-native-ble-plx', 'bun:sqlite
 const UI_PACKAGES = ['packages/design-system'];
 
 function ours(specifier: string): string | null {
-  const match = /^@boardclimb\/([\w-]+)(?:\/testing)?$/.exec(specifier);
+  const match = /^@boardclimb\/([\w-]+)(?:\/testing|\/manifest)?$/.exec(specifier);
   return match?.[1] ?? null;
 }
 

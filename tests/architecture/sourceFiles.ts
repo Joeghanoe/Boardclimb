@@ -11,9 +11,14 @@ export interface SourceFile {
   text: string;
 }
 
-const PATTERNS = ['apps/*/*.{ts,tsx}', 'apps/*/src/**/*.{ts,tsx}', 'packages/*/src/**/*.{ts,tsx}'];
+const PATTERNS = [
+  'apps/*/*.{ts,tsx}',
+  'apps/*/src/**/*.{ts,tsx}',
+  'packages/*/src/**/*.{ts,tsx}',
+  'infra/*/src/**/*.{ts,tsx}',
+];
 
-/** Every TypeScript file of every workspace (apps and packages), read once through Bun's file APIs. */
+/** Every TypeScript file of every workspace (apps, packages and infra), read once through Bun's file APIs. */
 async function loadSources(): Promise<SourceFile[]> {
   const paths = PATTERNS.flatMap((pattern) => [...new Glob(pattern).scanSync({ cwd: ROOT })])
     .map((path) => path.replaceAll('\\', '/'))

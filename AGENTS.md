@@ -34,13 +34,15 @@ packages/
   protocol-aurora/        shared reference-derived Aurora v2/v3 encoder
   storage-local/          SQLite schema, migrations, SQL stores over the SqlDatabase port
   design-system/          tokens and primitives; imports nothing
+infra/
+  snapshot-mirror/        Cloudflare Worker mirroring BoardSesh snapshots into R2 (ADR-0006); never imported by the app
 tests/architecture/       dependency-boundary, adapter-registry and design-consistency tests
 tests/scenarios/          end-to-end flows through the real composition root
 scripts/                  Bun dev scripts (verify.ts)
 docs/                     solution-design.md, adr/
 ```
 
-Dependencies point inward: domain imports nothing; core packages and application import domain; adapters import their core; only `apps/mobile/src/composition` imports adapters, drivers and storage. Do not add `shared/`, `utils/` or `helpers/` folders. One exported type, component or hook per file, named after it.
+Dependencies point inward: domain imports nothing; core packages and application import domain; adapters import their core; only `apps/mobile/src/composition` imports adapters, drivers and storage. `infra/` imports only `@boardclimb/provider-snapshots/manifest`, and nothing imports `infra/`. Do not add `shared/`, `utils/` or `helpers/` folders. One exported type, component or hook per file, named after it.
 
 ## Naming
 
@@ -50,6 +52,7 @@ Packages are `@boardclimb/<folder-name>`. Test files sit beside their source as 
 
 - Append-only event log with derived totals and set-style toggles: no stored totals, no flip commands. ADR: `docs/adr/ADR-0003-local-persistence-and-log-derivation.md`
 - Native composition uses public BoardSesh snapshot sources and reference-derived BLE protocols for all three boards (ADR-0005); physical compatibility is still unverified. Sample mode remains explicit on web. Constructors without a source/encoder still return `provider_unverified` or `protocol_unverified` instead of guessing. ADR: `docs/adr/ADR-0002-react-native-architecture-and-integrations-updated.md`
+- Phones read catalog manifests from our R2 snapshot mirror first (when `EXPO_PUBLIC_CATALOG_MIRROR_URL` is set at build time), then BoardSesh. The mirror only copies BoardSesh's output and validates it with the phones' own manifest rules. ADR: `docs/adr/ADR-0006-snapshot-mirror-on-cloudflare.md`
 - Only `lightUp` sends an LED command; connection, reconnection, resume and browsing never do. ADR: `docs/adr/ADR-0001-product-experience-and-logging-updated.md`
 - Bun workspaces and `bun test`, TypeScript strict, Expo with a development client (Expo and Metro run on Node; everything else on Bun, hoisted linker). ADR: `docs/adr/ADR-0004-toolchain-and-test-strategy.md`
 
@@ -69,6 +72,7 @@ Packages are `@boardclimb/<folder-name>`. Test files sit beside their source as 
 - A new SQLite column or table: a numbered migration, `SqlLogStore` or cache queries, the ADR-0003 layout table and a migration test from the previous version. **checked**: `packages/storage-local/src/migrations.test.ts`.
 - A new import between packages: the dependency direction above. **checked**: `tests/architecture/dependency-boundaries.test.ts`.
 - A new use case that can call `BoardController.lightUp`: only `lightUp` may. **checked**: `packages/application/src/no-passive-lighting.test.ts`.
+- A change to the snapshot manifest format or URL layout: `parseSnapshotEntry` in `provider-snapshots`, which both the phones and `infra/snapshot-mirror` use. **checked**: `infra/snapshot-mirror/src/mirrorSnapshots.test.ts` (the published mirror manifest must pass the phones' parser) and `packages/provider-snapshots/src/parseSnapshotEntry.test.ts`.
 - A new telemetry event or property: the sink allow-list and the design's Observability contract. **checked**: `tests/architecture/design-consistency.test.ts`.
 - A new design token: `packages/design-system` and a contrast check. **checked**: `packages/design-system/src/contrast.test.ts`.
 

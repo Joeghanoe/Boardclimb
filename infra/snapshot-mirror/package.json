@@ -1,0 +1,9 @@
+{
+  "name": "@boardclimb/snapshot-mirror",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@boardclimb/provider-snapshots": "*"
+  }
+}

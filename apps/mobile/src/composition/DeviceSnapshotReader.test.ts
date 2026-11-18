@@ -21,6 +21,11 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { gzipSync } from 'fflate';
 
+const MIRROR = 'https://catalog.example.org';
+const MANIFESTS = [
+  `${MIRROR}/board-snapshots/v1-gzip/manifest.json`,
+  'https://snapshots.boardsesh.com/board-snapshots/v1-gzip/manifest.json',
+];
 const directory = mkdtempSync(join(tmpdir(), 'boardclimb-native-snapshot-'));
 const fixture = readFileSync(
   join(import.meta.dir, '../../../../packages/provider-snapshots/fixtures/kilter.db'),
@@ -29,6 +34,8 @@ const compressed = gzipSync(fixture);
 let builtAt = '2026-11-17T07:00:00Z';
 let downloadFails = false;
 let decodedDownload = false;
+let mirrorDown = false;
+const downloadedFrom: string[] = [];
 const handles: { db: Database; closed: boolean; file: string }[] = [];
 class TestDirectory {
   readonly uri: string;
@@ -100,8 +107,9 @@ class TestFile {
       },
     };
   }
-  static async downloadFileAsync(_url: string, dest: TestFile) {
+  static async downloadFileAsync(url: string, dest: TestFile) {
     if (downloadFails) throw new Error('offline');
+    downloadedFrom.push(new URL(url).origin);
     writeFileSync(dest.uri, decodedDownload ? fixture : compressed);
     return dest;
   }
@@ -113,8 +121,8 @@ mock.module('expo-file-system', () => ({
   Paths: { document: directory, availableDiskSpace: 1024 * 1024 * 1024 },
 }));
 mock.module('expo/fetch', () => ({
-  fetch: async () => ({
-    ok: true,
+  fetch: async (manifestUrl: string) => ({
+    ok: !(mirrorDown && manifestUrl.startsWith(MIRROR)),
     json: async () => ({
       formatVersion: 2,
       entries: [
@@ -122,7 +130,7 @@ mock.module('expo/fetch', () => ({
           boardType: 'kilter',
           layoutId: 1,
           privacyVersion: 1,
-          url: `https://snapshots.boardsesh.com/board-snapshots/v1-gzip/kilter/1/${Date.parse(builtAt)}.db`,
+          url: `${new URL(manifestUrl).origin}/board-snapshots/v1-gzip/kilter/1/${Date.parse(builtAt)}.db`,
           builtAt,
           bytes: compressed.length,
           uncompressedBytes: fixture.length,
@@ -274,4 +282,28 @@ it('FR-006: a catalog downloaded before filtered browsing gets the browse index 
   await connection.release?.();
   await tick();
   downloadFails = false;
+});
+
+it('FR-006/ADR-0006: phones install from the mirror first and fall back to BoardSesh when it is down', async () => {
+  downloadedFrom.length = 0;
+  builtAt = '2026-11-24T07:00:00Z';
+  const fromMirror = await new DeviceSnapshotReader(() => Date.parse('2026-11-24T08:00:00Z'), MANIFESTS).open(
+    'kilter',
+    1,
+  );
+  expect((await fromMirror.all('SELECT uuid FROM board_climbs LIMIT 1', [])).length).toBe(1);
+  await fromMirror.release?.();
+  await tick();
+  mirrorDown = true;
+  builtAt = '2026-11-25T07:00:00Z';
+  // The installed catalog opens at once; the daily refresh runs in the background and must reach BoardSesh.
+  const fromBoardSesh = await new DeviceSnapshotReader(
+    () => Date.parse('2026-11-25T08:00:00Z'),
+    MANIFESTS,
+  ).open('kilter', 1);
+  await fromBoardSesh.release?.();
+  await tick();
+  await tick();
+  mirrorDown = false;
+  expect(downloadedFrom).toEqual([MIRROR, 'https://snapshots.boardsesh.com']);
 });

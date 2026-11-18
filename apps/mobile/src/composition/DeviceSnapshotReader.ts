@@ -4,7 +4,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { fetch } from 'expo/fetch';
 import { Gunzip } from 'fflate';
 import { CatalogError } from '@boardclimb/catalog-core';
-import { parseSnapshotArtifact } from '@boardclimb/provider-snapshots';
+import { BOARDSESH_SNAPSHOT_MANIFEST, parseSnapshotArtifact } from '@boardclimb/provider-snapshots';
 import { SNAPSHOT_BROWSE_INDEX } from '@boardclimb/provider-snapshots';
 import type { SnapshotReader } from '@boardclimb/provider-snapshots';
 
@@ -13,7 +13,11 @@ export class DeviceSnapshotReader implements SnapshotReader {
   private readonly directory = new Directory(Paths.document, 'catalog-snapshots');
   private readonly connections = new Map<string, SQLiteDatabase>();
   private readonly pending = new Map<string, Promise<SQLiteDatabase>>();
-  constructor(private readonly now: () => number = Date.now) {}
+  /** `manifestUrls` are tried in order; the first that validates and downloads wins (ADR-0006 mirror first). */
+  constructor(
+    private readonly now: () => number = Date.now,
+    private readonly manifestUrls: readonly string[] = [BOARDSESH_SNAPSHOT_MANIFEST],
+  ) {}
 
   private readonly opening = new Map<string, Promise<SQLiteDatabase>>();
   private readonly closing = new Set<SQLiteDatabase>();
@@ -95,15 +99,35 @@ export class DeviceSnapshotReader implements SnapshotReader {
   }
 
   private async download(manufacturer: string, layout: number, key: string): Promise<SQLiteDatabase> {
+    let failure: unknown;
+    for (const manifestUrl of this.manifestUrls) {
+      try {
+        return await this.install(manifestUrl, manufacturer, layout, key);
+      } catch (error) {
+        failure = error;
+      }
+    }
+    // The last source decides the climber's message, so a broken mirror never hides BoardSesh's own answer.
+    if (failure instanceof CatalogError) throw failure;
+    throw new CatalogError(
+      'network_unavailable',
+      'The board catalog could not be downloaded. Try again on Wi-Fi.',
+    );
+  }
+
+  private async install(
+    manifestUrl: string,
+    manufacturer: string,
+    layout: number,
+    key: string,
+  ): Promise<SQLiteDatabase> {
     const downloaded = new File(this.directory, `${key}.download`);
     const staged = new File(this.directory, `${key}.staged`);
     let db: SQLiteDatabase | undefined;
     try {
-      const response = await fetch('https://snapshots.boardsesh.com/board-snapshots/v1-gzip/manifest.json', {
-        signal: AbortSignal.timeout(15000),
-      });
+      const response = await fetch(manifestUrl, { signal: AbortSignal.timeout(15000) });
       if (!response.ok) throw new Error('Manifest unavailable');
-      const artifact = parseSnapshotArtifact(await response.json(), manufacturer, layout);
+      const artifact = parseSnapshotArtifact(await response.json(), manufacturer, layout, manifestUrl);
       const filename = `${key}-${Date.parse(artifact.builtAt)}.db`;
       const installed = new File(this.directory, filename);
       if (
@@ -167,11 +191,7 @@ export class DeviceSnapshotReader implements SnapshotReader {
       return db;
     } catch (error) {
       await db?.closeAsync().catch(() => undefined);
-      if (error instanceof CatalogError) throw error;
-      throw new CatalogError(
-        'network_unavailable',
-        'The board catalog could not be downloaded. Try again on Wi-Fi.',
-      );
+      throw error;
     } finally {
       if (downloaded.exists) downloaded.delete();
       const unfinished = new File(this.directory, `${key}.staged`);
