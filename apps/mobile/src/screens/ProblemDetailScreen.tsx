@@ -34,6 +34,10 @@ import { formatRating } from './presentation/formatRating';
 import { useBoardSnapshot } from './useBoardSnapshot';
 import { useProblemLog } from './useProblemLog';
 
+/** Space around the board: sides line up with the header, and the bottom keeps it clear of the action bar. */
+const CANVAS_INSET_X = spacing.lg;
+const CANVAS_INSET_BOTTOM = spacing.lg;
+
 interface ProblemDetailScreenProps {
   container: AppContainer;
   selection: BoardSelection;
@@ -239,8 +243,8 @@ function ProblemDetail({
         <View
           style={styles.canvasContainer}
           onLayout={(event) => {
-            const width = Math.round(event.nativeEvent.layout.width) - spacing.sm * 2;
-            const height = Math.round(event.nativeEvent.layout.height);
+            const width = Math.round(event.nativeEvent.layout.width) - CANVAS_INSET_X * 2;
+            const height = Math.round(event.nativeEvent.layout.height) - CANVAS_INSET_BOTTOM;
             if (width > 0 && height > 0 && (width !== canvas?.width || height !== canvas.height))
               setCanvas({ width, height });
           }}
@@ -359,7 +363,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: CANVAS_INSET_X,
+    paddingBottom: CANVAS_INSET_BOTTOM,
   },
   centeredMessage: { alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.xs },
   centeredSubtext: { textAlign: 'center', maxWidth: 320 },
