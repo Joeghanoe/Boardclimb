@@ -11,7 +11,8 @@ import { ClimbingLog, InMemoryLogStore, ProblemBrowser, noDiagnostics } from '@b
 import { FixedClock, SequentialIds, bench } from '@boardclimb/application/testing';
 
 /**
- * Only an explicit Light up may change the LEDs (FR-008, FR-017, acceptance 1 and 2, AC-018). The recording
+ * Only an explicit Light up, or light on swipe the climber switched on, may change the LEDs (FR-008, FR-008a,
+ * FR-017, acceptance 1 and 2, AC-018, AC-020). The recording
  * radio sees every write, so these tests observe the board's side instead of counting mock calls.
  */
 describe('no passive lighting (FR-008)', () => {
@@ -96,5 +97,82 @@ describe('no passive lighting (FR-008)', () => {
     expect(new TextDecoder().decode(transport.writes[1]?.frame)).toBe(
       `SAMPLE ${(await browser.getProblem(configuration, b)).holds.map((hold) => hold.holdId).join(',')}`,
     );
+  });
+
+  async function connected() {
+    const w = world();
+    const found = await w.session.discover('kilter');
+    if (!found.ok || !found.boards[0]) throw new Error('fixture');
+    await w.session.connect(found.boards[0], w.configuration);
+    const page = await w.browser.browse(w.configuration, defaultProblemFilters, null);
+    const problems = await Promise.all(
+      page.items.slice(0, 20).map((summary) => w.browser.getProblem(w.configuration, summary)),
+    );
+    return { ...w, found: found.boards[0], problems };
+  }
+
+  it('FR-008a: with light on swipe off, settling on 20 problems sends nothing', async () => {
+    const { session, transport, problems } = await connected();
+    for (const problem of problems) expect(await session.showing(problem)).toBeNull();
+    expect(transport.writeCount).toBe(0);
+  });
+
+  it('AC-020: with light on swipe on, the board shows the problem the climber settled on, once', async () => {
+    const { session, transport, problems } = await connected();
+    const [a, b] = problems;
+    if (!a || !b) throw new Error('fixture');
+    expect(session.setLightOnSwipe(true)).toBe(true);
+    expect(transport.writeCount).toBe(0);
+
+    await session.showing(a);
+    await session.showing(b);
+    await session.showing(b);
+    expect(transport.writeCount).toBe(2);
+    expect(new TextDecoder().decode(transport.writes[1]?.frame)).toBe(
+      `SAMPLE ${b.holds.map((hold) => hold.holdId).join(',')}`,
+    );
+  });
+
+  it('FR-008a: light on swipe cannot be switched on without a connection', async () => {
+    const { session } = world();
+    expect(session.setLightOnSwipe(true)).toBe(false);
+    expect(session.snapshot().lightOnSwipe).toBe(false);
+  });
+
+  it('FR-017: after a lost link and reconnect, light on swipe waits for the next problem', async () => {
+    const { session, transport, problems } = await connected();
+    const [a, b] = problems;
+    if (!a || !b) throw new Error('fixture');
+    session.setLightOnSwipe(true);
+    await session.showing(a);
+    expect(transport.writeCount).toBe(1);
+
+    transport.simulateDisconnect('dev-1');
+    expect(await session.showing(b)).toBeNull();
+    await session.resume();
+    await session.reconnect();
+    expect(session.snapshot().connection).toBe('connected');
+    await session.showing(a);
+    expect(transport.writeCount).toBe(1);
+
+    await session.showing(b);
+    expect(transport.writeCount).toBe(2);
+  });
+
+  it('FR-008a: disconnecting or connecting again switches light on swipe off', async () => {
+    const { session, transport, problems, found, configuration } = await connected();
+    const [a, b] = problems;
+    if (!a || !b) throw new Error('fixture');
+    session.setLightOnSwipe(true);
+    await session.connect(found, configuration);
+    expect(session.snapshot().lightOnSwipe).toBe(false);
+    await session.showing(a);
+
+    session.setLightOnSwipe(true);
+    await session.disconnect();
+    expect(session.snapshot().lightOnSwipe).toBe(false);
+    await session.connect(found, configuration);
+    await session.showing(b);
+    expect(transport.writeCount).toBe(0);
   });
 });

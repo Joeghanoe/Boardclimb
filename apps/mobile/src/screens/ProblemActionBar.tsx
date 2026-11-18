@@ -13,6 +13,7 @@ import {
   useTheme,
 } from '@boardclimb/design-system';
 import type { LogSummary, Problem } from '@boardclimb/domain';
+import { LightOnSwipeToggle } from './LightOnSwipeToggle';
 import { describeCommand } from './presentation/describeCommand';
 import { describeLogError } from './presentation/describeLogError';
 import type { Guidance } from './presentation/Guidance';
@@ -27,6 +28,8 @@ export interface ProblemActionBarProps {
   onSetTop: (value: boolean) => void;
   onSetFlash: (value: boolean, acknowledge?: boolean) => Promise<LogOutcome>;
   onLightUp: () => void;
+  /** Switches light on swipe; offered only while this phone is connected (FR-008a). */
+  onChangeLightOnSwipe: (next: boolean) => void;
   onOpenBoard: () => void;
   onOpenDetails?: () => void;
 }
@@ -45,6 +48,7 @@ export function ProblemActionBar({
   onSetTop,
   onSetFlash,
   onLightUp,
+  onChangeLightOnSwipe,
   onOpenBoard,
   onOpenDetails,
 }: ProblemActionBarProps) {
@@ -54,6 +58,7 @@ export function ProblemActionBar({
   const commandLine = problem ? describeCommand(snapshot.command, problem.key) : null;
   const isPending = snapshot.command.state === 'pending';
   const needsBoard = snapshot.connection !== 'connected';
+  const status = commandLine && commandLine.tone !== 'error' ? commandLine : null;
   const canLightUp = problem !== null;
   const minusDisabled = summary === null || summary.sessionManualAttempts <= 0;
   const ready = summary !== null;
@@ -111,26 +116,33 @@ export function ProblemActionBar({
         </View>
       ) : null}
 
-      {commandLine && commandLine.tone !== 'error' ? (
-        <View
-          accessibilityLiveRegion="polite"
-          style={[styles.statusLine, { backgroundColor: colors.surfaceCharcoalRaised }]}
-        >
-          <View
-            style={[
-              styles.statusDot,
-              { backgroundColor: commandLine.tone === 'confirmed' ? colors.success : colors.primary },
-            ]}
-          />
-          <AppText variant="caption" tone="inverse" style={styles.statusText} numberOfLines={2}>
-            {commandLine.title}
-            {commandLine.message ? (
-              <AppText variant="caption" tone="inverseMuted">
-                {'  '}
-                {commandLine.message}
+      {status || !needsBoard ? (
+        <View style={styles.statusRow}>
+          {needsBoard ? null : (
+            <LightOnSwipeToggle on={snapshot.lightOnSwipe} onChange={onChangeLightOnSwipe} />
+          )}
+          {status ? (
+            <View
+              accessibilityLiveRegion="polite"
+              style={[styles.statusLine, { backgroundColor: colors.surfaceCharcoalRaised }]}
+            >
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: status.tone === 'confirmed' ? colors.success : colors.primary },
+                ]}
+              />
+              <AppText variant="caption" tone="inverse" style={styles.statusText} numberOfLines={2}>
+                {status.title}
+                {status.message ? (
+                  <AppText variant="caption" tone="inverseMuted">
+                    {'  '}
+                    {status.message}
+                  </AppText>
+                ) : null}
               </AppText>
-            ) : null}
-          </AppText>
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -223,7 +235,10 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   alertArea: { gap: spacing.xs },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   statusLine: {
+    flex: 1,
+    minHeight: touchTarget,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,

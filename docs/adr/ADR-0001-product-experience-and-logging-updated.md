@@ -2,6 +2,7 @@
 
 - **Status:** Accepted for product direction; formal requirements and use cases added; technical feasibility tracked separately
 - **Date:** 2026-11-16
+- **Amended:** 2026-11-18, light on swipe (§2.1 item 7, FR-008, FR-008a, AC-020, acceptance 1), approved by the product owner
 - **Decision owners:** Product team
 - **Scope:** MVP for Kilter Board, MoonBoard, and Tension Board
 - **Related:** [ADR-0002](ADR-0002-react-native-architecture-and-integrations.md)
@@ -24,12 +25,13 @@ Build a **local-first, cross-manufacturer climbing companion** with two conceptu
 
 ### 2.1 Browsing and board control
 
-1. Browsing, opening details, filtering, and logging **never change the illuminated problem**.
+1. Browsing, opening details, filtering, and logging **never change the illuminated problem**, unless the climber switched on light on swipe (item 7).
 2. An explicit **Light up** action sends the selected problem's LED mapping to the currently connected compatible board.
 3. **Most recent successful command wins**; there is no session ownership, reservation, or lock mechanism in the MVP.
 4. Each user browses independently. Support simultaneous phone connections where controllers permit it. When unsupported, the **last-connected phone wins** is the intended fallback, subject to whether controller takeover is technically possible; never claim hardware support without testing.
 5. Nearby boards are discovered automatically but **never selected or connected automatically**. The climber explicitly chooses the board; manual configuration is offered when discovery cannot identify it. On reconnect, never automatically resend the last LED pattern. A user must tap **Light up** again.
 6. Show connection and lighting command status truthfully. If the controller cannot report the actual LED state, show **last command sent by this device**, not authoritative shared-board state.
+7. **Light on swipe** (amended 2026-11-18). A climber alone at the board can switch on light on swipe while this phone is connected. The board then follows the problem on screen: the problem the climber settles on is lit once, without tapping Light up. Switching it on lights the problem on screen. It is off by default, is not stored, and turns off on disconnect or when connecting to a board. A lost link pauses it: reconnecting or resuming relights nothing, and the next problem the climber settles on is lit. The phone cannot tell whether someone else is using the board, so the climber decides when to switch it on.
 
 ### 2.2 Climbing-log controls
 
@@ -166,7 +168,8 @@ The identifiers in this section are stable references for implementation tasks a
 | FR-005 | The catalog abstraction MUST expose board listing/detail, configurations, paginated problem listing, and problem detail/hold layout where supplied by the provider. | Contract tests run against Kilter, MoonBoard and Tension adapters. |
 | FR-006 | The app MUST fetch catalog entries incrementally where the provider permits, cache received data in SQLite, display cached results immediately, and refresh unobtrusively in the background. | Paging/cache/revisit/offline test scenarios pass; bulk-only APIs use an adapter-specific fallback. |
 | FR-007 | The app MUST apply a persistent, manufacturer-shared grade-range filter and minimum star-rating filter; it MUST preserve original provider grades and distinguish missing ratings. | Switching boards and restarting preserves filters; unrated entries are not silently treated as zero stars. |
-| FR-008 | Opening, filtering or logging a problem MUST NOT send LED-changing commands. Only an explicit **Light up** action MAY change board LEDs. | Command recorder observes zero sends during browsing and one explicit send for a successful Light up. |
+| FR-008 | Opening, filtering or logging a problem MUST NOT send LED-changing commands unless light on swipe is on (FR-008a). Only an explicit **Light up** action, or light on swipe, MAY change board LEDs. | Command recorder observes zero sends during browsing and one explicit send for a successful Light up. |
+| FR-008a | Light on swipe MUST be off by default and switchable only while connected. While on, settling on a problem MUST send that problem at most once; a problem flicked past MUST NOT be sent. Disconnecting or connecting MUST switch it off, and reconnecting or resuming MUST NOT send. | Command recorder: zero sends with it off; one send per settled problem with it on; zero sends on reconnect and resume. |
 | FR-009 | The app MUST report connection and lighting-command states honestly, without presenting a sent command as confirmed physical LED state unless hardware acknowledges it. | UI distinguishes pending, sent, confirmed when available, and failed states. |
 | FR-010 | The app MUST allow independent browsing on multiple phones and apply the latest successfully executed explicit Light up command when the controller allows it. | Two-phone scenario demonstrates no passive board changes; hardware limits are recorded. |
 | FR-011 | Where simultaneous BLE connections are unsupported, the app MUST attempt **last-connected-phone takeover** only where feasible; connection itself MUST NOT change LEDs. | Controller-specific tests verify actual behavior and expose unsupported takeover as a technical limitation, not a fabricated success. |
@@ -314,10 +317,11 @@ The existing acceptance criteria below remain normative. The matrix maps require
 - **AC-017:** In a two-phone test, a second phone's browsing never changes LEDs. Simultaneous connections or last-connected takeover are verified separately for each controller; unsupported behavior is reported rather than hidden.
 - **AC-018:** Explicit connection and automatic reconnection send no LED-changing command; only pressing Light up does.
 - **AC-019:** The app can reopen after forced termination with logs, achievements, previous session dates and cached catalog entries intact.
+- **AC-020:** With light on swipe on, swiping to a problem and staying on it lights it once; returning to it or reconnecting sends nothing more.
 
 ## 8. Acceptance criteria
 
-1. Browsing 20 different problems without pressing **Light up** sends **zero** LED-changing commands.
+1. Browsing 20 different problems without pressing **Light up**, and with light on swipe off, sends **zero** LED-changing commands.
 2. A second person's selection never triggers a command from this device; reconnection does not restore an old pattern.
 3. Two manual Attempts followed by Top result in `attempts=3, top=true, flash=false`.
 4. Toggling Top off restores `attempts=2`; repeated Top ON/OFF cycles always produce 2 or 3, never 4+.

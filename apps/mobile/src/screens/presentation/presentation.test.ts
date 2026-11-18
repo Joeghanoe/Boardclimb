@@ -80,6 +80,7 @@ describe('connection wording', () => {
     capabilities: null,
     error: null,
     command: { state: 'idle' },
+    lightOnSwipe: false,
   };
   const board = { id: 'b', name: 'Wall A', manufacturer: 'kilter', detectedConfigurationId: null } as const;
 

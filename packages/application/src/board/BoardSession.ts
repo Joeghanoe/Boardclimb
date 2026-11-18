@@ -20,12 +20,14 @@ const IDLE: BoardSessionSnapshot = {
   capabilities: null,
   error: null,
   command: { state: 'idle' },
+  lightOnSwipe: false,
 };
 
 /**
  * This phone's view of one board: connection, last lighting command and honest status (FR-009, FR-017).
- * Only `lightUp` sends an LED command. Discover, connect, reconnect and resume never do, and a dropped link
- * is never silently repaired with a command.
+ * Only `lightUp` sends an LED command, either on a Light up tap or, when the climber switched on light on swipe,
+ * through `showing`. Discover, connect, reconnect and resume never do, and a dropped link is never silently
+ * repaired with a command.
  */
 export class BoardSession {
   private state: BoardSessionSnapshot = IDLE;
@@ -75,6 +77,7 @@ export class BoardSession {
       connection: 'connecting',
       error: null,
       command: { state: 'idle' },
+      lightOnSwipe: false,
     });
     const work = this.connecting.then(async () => {
       await stopped;
@@ -147,6 +150,28 @@ export class BoardSession {
         : { state: 'failed', problemKey: problem.key, code: result.code, message: result.message },
     });
     return result;
+  }
+
+  /**
+   * Switches light on swipe (FR-008a). It can only be switched on while this phone is connected, and switching it
+   * on sends nothing by itself. Returns whether it is now on.
+   */
+  setLightOnSwipe(on: boolean): boolean {
+    const next = on && this.state.connection === 'connected';
+    if (next !== this.state.lightOnSwipe) this.update({ lightOnSwipe: next });
+    return next;
+  }
+
+  /**
+   * The climber settled on this problem. Lights it only when light on swipe is on, the link is up, and this phone
+   * did not already try to send it (a failure waits for a Light up tap); otherwise sends nothing and returns null. A lost link waits for the next problem
+   * rather than replaying this one after reconnecting (FR-017).
+   */
+  async showing(problem: Problem): Promise<LightCommandResult | null> {
+    const { lightOnSwipe, connection, command } = this.state;
+    if (!lightOnSwipe || connection !== 'connected') return null;
+    if (command.state !== 'idle' && command.problemKey === problem.key) return null;
+    return this.lightUp(problem);
   }
 
   async disconnect(): Promise<void> {

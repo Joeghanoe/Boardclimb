@@ -10,4 +10,9 @@ export interface BoardSessionSnapshot {
   capabilities: BoardCapabilities | null;
   error: { code: BoardErrorCode; message: string } | null;
   command: CommandStatus;
+  /**
+   * Light on swipe: the climber asked this phone to light whichever problem they settle on (FR-008a).
+   * Off until switched on, and off again after a disconnect or a new connection.
+   */
+  lightOnSwipe: boolean;
 }
