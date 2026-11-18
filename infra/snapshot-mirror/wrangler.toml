@@ -1,0 +1,21 @@
+# Snapshot mirror (ADR-0006). Deployed by .github/workflows/deploy-snapshot-mirror.yml after a merge to main,
+# or by hand with scripts/deploy.sh; both create the bucket and custom domain when missing.
+name = "boardclimb-snapshot-mirror"
+main = "src/worker.ts"
+compatibility_date = "2026-10-01"
+
+[triggers]
+# 45 minutes after BoardSesh's 07:15 UTC export, with one retry in the afternoon.
+crons = ["0 8 * * *", "0 14 * * *"]
+
+[[r2_buckets]]
+binding = "SNAPSHOTS"
+bucket_name = "boardclimb-snapshots"
+
+[vars]
+# The bucket's public custom domain; scripts/deploy.sh sets it from MIRROR_DOMAIN.
+PUBLIC_BASE_URL = ""
+
+[limits]
+# Copying the 84 MB Kilter artifact needs more CPU than the free plan's 10 ms (Workers Paid).
+cpu_ms = 300000

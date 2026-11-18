@@ -1,0 +1,71 @@
+name: Snapshot mirror
+
+# ADR-0006. Pull requests only bundle the Worker. A merge to main (a human action) deploys it, after the
+# `snapshot-mirror` environment's protection rules pass; add required reviewers there for a manual gate (CLD.2).
+on:
+  pull_request:
+    paths:
+      - infra/snapshot-mirror/**
+      - packages/provider-snapshots/src/**
+      - packages/catalog-core/src/**
+      - .github/workflows/deploy-snapshot-mirror.yml
+  push:
+    branches: [main]
+    paths:
+      - infra/snapshot-mirror/**
+      - packages/provider-snapshots/src/**
+      - packages/catalog-core/src/**
+      - .github/workflows/deploy-snapshot-mirror.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snapshot-mirror-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          # bun lint ships only in canary builds so far (ADR-0004 section 7); setup-bun cannot pin one build.
+          bun-version: canary
+      - run: bun install --frozen-lockfile
+      - run: bun run verify
+      - run: infra/snapshot-mirror/scripts/deploy.sh --dry-run
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: snapshot-mirror
+      url: https://${{ vars.MIRROR_DOMAIN }}/board-snapshots/v1-gzip/manifest.json
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: canary
+      - run: bun install --frozen-lockfile
+      - name: Provision R2 and deploy the Worker
+        run: infra/snapshot-mirror/scripts/deploy.sh
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+          MIRROR_DOMAIN: ${{ vars.MIRROR_DOMAIN }}
+      - name: Check the published mirror
+        working-directory: infra/snapshot-mirror
+        run: bun scripts/checkMirror.ts "$MIRROR_DOMAIN"
+        env:
+          MIRROR_DOMAIN: ${{ vars.MIRROR_DOMAIN }}

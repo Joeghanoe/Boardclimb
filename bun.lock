@@ -46,6 +46,13 @@
         "react-native-web": "^0.21.4",
       },
     },
+    "infra/snapshot-mirror": {
+      "name": "@boardclimb/snapshot-mirror",
+      "version": "0.1.0",
+      "dependencies": {
+        "@boardclimb/provider-snapshots": "*",
+      },
+    },
     "packages/application": {
       "name": "@boardclimb/application",
       "version": "0.1.0",
@@ -318,6 +325,8 @@
     "@boardclimb/protocol-aurora": ["@boardclimb/protocol-aurora@workspace:packages/protocol-aurora"],
 
     "@boardclimb/provider-snapshots": ["@boardclimb/provider-snapshots@workspace:packages/provider-snapshots"],
+
+    "@boardclimb/snapshot-mirror": ["@boardclimb/snapshot-mirror@workspace:infra/snapshot-mirror"],
 
     "@boardclimb/storage-local": ["@boardclimb/storage-local@workspace:packages/storage-local"],
 
