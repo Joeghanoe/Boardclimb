@@ -16,7 +16,7 @@ import {
 import { MANUFACTURERS } from '@boardclimb/domain';
 import type { BoardConfiguration, Manufacturer } from '@boardclimb/domain';
 import type { AppContainer } from '../composition/AppContainer';
-import { ConfigurationChooser } from './ConfigurationChooser';
+import { ConfigurationSheet } from './ConfigurationSheet';
 import { ModeBanner } from './ModeBanner';
 import { ScreenFrame } from './ScreenFrame';
 import { describeBoardError } from './presentation/describeBoardError';
@@ -276,23 +276,19 @@ export function BoardScreen({ container, selection, onBack, onOpenDiagnostics }:
               onPress={connect}
             />
 
-            <Button
-              label={editingLayout ? 'Hide layout choices' : 'Change layout'}
-              expanded={editingLayout}
-              onPress={() => setEditingLayout(!editingLayout)}
-            />
+            <Button label="Change layout" onPress={() => setEditingLayout(true)} />
 
-            {editingLayout ? (
-              <ConfigurationChooser
-                configurations={layouts}
-                selectedId={layoutId}
-                onChoose={(configuration) => {
-                  setLayoutId(configuration.id);
-                  setEditingLayout(false);
-                  scroll.current?.scrollTo({ y: 0, animated: false });
-                }}
-              />
-            ) : null}
+            <ConfigurationSheet
+              visible={editingLayout}
+              title={describeManufacturer(choosing.manufacturer)}
+              configurations={layouts}
+              selectedId={layoutId}
+              onChoose={(configuration) => {
+                setLayoutId(configuration.id);
+                setEditingLayout(false);
+              }}
+              onClose={() => setEditingLayout(false)}
+            />
 
             <Button label="Cancel selection" onPress={() => setChoosing(null)} />
           </Card>
