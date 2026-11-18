@@ -11,6 +11,8 @@ interface ScreenFrameProps {
   active?: boolean;
   onBack?: () => void;
   headerRight?: ReactNode;
+  backdrop?: ReactNode;
+  titleVariant?: 'display' | 'title';
   children: ReactNode;
 }
 
@@ -20,6 +22,8 @@ export function ScreenFrame({
   eyebrow,
   onBack,
   headerRight,
+  backdrop,
+  titleVariant = 'display',
   children,
   active = true,
 }: ScreenFrameProps) {
@@ -38,6 +42,7 @@ export function ScreenFrame({
         },
       ]}
     >
+      {backdrop}
       <View style={styles.column}>
         <View style={styles.header}>
           {onBack ? <IconButton icon="back" label="Back" onPress={onBack} /> : null}
@@ -47,7 +52,7 @@ export function ScreenFrame({
                 {eyebrow}
               </AppText>
             ) : null}
-            <AppText variant="display" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+            <AppText variant={titleVariant} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
               {title}
             </AppText>
           </View>

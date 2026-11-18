@@ -14,7 +14,7 @@ interface AngleStripProps {
   onSelect: (configuration: BoardConfiguration) => void;
 }
 
-const PILL_WIDTH = 68;
+const PILL_WIDTH = 48;
 
 /** Every angle of a layout in one row that swipes sideways, so the row never changes height and the choice stays at the thumb. */
 export function AngleStrip({ configurations, selectedId, block, onSelect }: AngleStripProps) {
@@ -31,13 +31,7 @@ export function AngleStrip({ configurations, selectedId, block, onSelect }: Angl
   }, [index, configurations]);
 
   return (
-    <ScrollView
-      ref={scroll}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}
-      accessibilityLabel="Wall angle"
-    >
+    <ScrollView ref={scroll} horizontal contentContainerStyle={styles.row} accessibilityLabel="Wall angle">
       {configurations.map((configuration) => {
         const label = configuration.angleDegrees === null ? 'Fixed' : `${configuration.angleDegrees}°`;
         return (

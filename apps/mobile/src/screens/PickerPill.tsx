@@ -33,8 +33,7 @@ export function PickerPill({ label, selected, block, onPress, accessibilityLabel
     >
       <AppText
         variant="label"
-        numberOfLines={1}
-        style={{ color: selected ? fill.on : colors.text }}
+        style={[styles.label, { color: selected ? fill.on : colors.text }]}
         importantForAccessibility="no"
       >
         {label}
@@ -45,11 +44,15 @@ export function PickerPill({ label, selected, block, onPress, accessibilityLabel
 
 const styles = StyleSheet.create({
   pill: {
-    minHeight: touchTarget + 4,
-    paddingHorizontal: spacing.lg,
+    minHeight: touchTarget,
+    minWidth: touchTarget,
+    maxWidth: '100%',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
     borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  label: { fontSize: 13, lineHeight: 18, textAlign: 'center' },
   pressed: { opacity: 0.8 },
 });

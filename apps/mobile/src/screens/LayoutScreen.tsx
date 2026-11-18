@@ -67,20 +67,29 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
   const selected = pickConfiguration(group?.configurations ?? [], angle);
   const blocks = manufacturerBlocks(active);
   const accent = blocks.from;
+  const manufacturerPrefix = describeManufacturer(active) + ' ';
+  const shortBoardLabels = boards.every((item) => item.board.name.startsWith(manufacturerPrefix));
+  const boardPrefix = board ? board.board.name + ' · ' : '';
+  const shortLayoutLabels = boardPrefix !== '' && groups.every((item) => item.label.startsWith(boardPrefix));
 
   return (
-    <ScreenFrame title="Choose your board" eyebrow="Board layout" onBack={onBack}>
+    <ScreenFrame
+      title="Choose your board"
+      eyebrow="Board layout"
+      titleVariant="title"
+      onBack={onBack}
+      backdrop={
+        <GradientBackdrop
+          from={BLOCKS[blocks.from].bg}
+          to={BLOCKS[blocks.to].bg}
+          glow={false}
+          fadeTo={colors.background}
+          style={styles.glow}
+        />
+      }
+    >
       <View style={styles.body}>
-        <View style={styles.glow}>
-          <GradientBackdrop
-            from={BLOCKS[blocks.from].bg}
-            to={BLOCKS[blocks.to].bg}
-            glow={false}
-            fadeTo={colors.background}
-          />
-        </View>
-
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView style={styles.body} contentContainerStyle={styles.content}>
           <ModeBanner mode={container.mode} persistent={container.persistent} />
 
           {entries === null ? (
@@ -92,7 +101,7 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
             </View>
           ) : (
             <>
-              <View accessibilityRole="tablist" accessibilityLabel="Manufacturer" style={styles.row}>
+              <View role="group" accessibilityLabel="Manufacturer" style={styles.row}>
                 {entries.map((item) => (
                   <PickerPill
                     key={item.manufacturer}
@@ -125,7 +134,12 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
                     {boards.map((item) => (
                       <PickerPill
                         key={item.board.id}
-                        label={item.board.name}
+                        label={
+                          shortBoardLabels
+                            ? item.board.name.slice(manufacturerPrefix.length)
+                            : item.board.name
+                        }
+                        accessibilityLabel={item.board.name}
                         selected={item.board.id === board?.board.id}
                         block={accent}
                         onPress={() => {
@@ -147,7 +161,8 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
                     {groups.map((item) => (
                       <PickerPill
                         key={item.key}
-                        label={item.label}
+                        label={shortLayoutLabels ? item.label.slice(boardPrefix.length) : item.label}
+                        accessibilityLabel={item.label}
                         selected={item.key === group?.key}
                         block={accent}
                         onPress={() => setGroupKey(item.key)}
@@ -167,8 +182,10 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
               Wall angle
             </AppText>
             <AppText
-              variant="display"
-              accessibilityLabel={selected ? `${selected.angleDegrees} degrees` : ''}
+              variant="label"
+              accessibilityLabel={
+                selected && selected.angleDegrees !== null ? `${selected.angleDegrees} degrees` : undefined
+              }
             >
               {selected ? (selected.angleDegrees === null ? 'Fixed' : `${selected.angleDegrees}°`) : '–'}
             </AppText>
@@ -183,7 +200,6 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
             <Button
               label="Show problems"
               variant="primary"
-              large
               disabled={!board || !selected}
               onPress={() => {
                 if (board && selected) onChoose({ boardName: board.board.name, configuration: selected });
@@ -198,19 +214,23 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
 
 const styles = StyleSheet.create({
   body: { flex: 1 },
-  glow: { position: 'absolute', top: 0, left: 0, right: 0, height: 240, opacity: 0.32 },
-  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.lg },
+  glow: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 'auto', height: 340, opacity: 0.24 },
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.md,
+    gap: spacing.md,
+  },
   loading: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xxl },
   row: { flexDirection: 'row', gap: spacing.sm },
   manufacturer: { flex: 1, paddingHorizontal: spacing.sm },
-  section: { gap: spacing.sm },
+  section: { gap: spacing.xs },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   footer: {
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.md,
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
   },
   angleHead: {
     flexDirection: 'row',
