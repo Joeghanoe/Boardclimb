@@ -1,10 +1,10 @@
-import { makeProblemKey } from '../makeProblemKey';
-import type { LogEvent } from '../LogEvent';
-import type { LogPlan } from '../LogPlan';
-import type { LogStamp } from '../LogStamp';
-import { planAchievementChange } from '../planAchievementChange';
-import { planAttemptChange } from '../planAttemptChange';
-import { summarizeLog } from '../summarizeLog';
+import { makeProblemKey } from '../problem/makeProblemKey';
+import type { LogEvent } from '../log/LogEvent';
+import type { LogPlan } from '../log/LogPlan';
+import type { LogStamp } from '../log/LogStamp';
+import { planAchievementChange } from '../log/planAchievementChange';
+import { planAttemptChange } from '../log/planAttemptChange';
+import { summarizeLog } from '../log/summarizeLog';
 
 export const PROBLEM = makeProblemKey('kilter', 'config-1', 'p-1');
 

@@ -1,2 +1,2 @@
-export * from './createKilterCatalog';
-export * from './createSampleKilterSource';
+export * from './catalog/createKilterCatalog';
+export * from './source/createSampleKilterSource';

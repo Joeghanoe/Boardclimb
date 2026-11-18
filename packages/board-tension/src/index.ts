@@ -1,3 +1,2 @@
-export * from './createTensionController';
-
-export { matchTensionDevice } from './matchTensionDevice';
+export * from './controller/createTensionController';
+export * from './device/matchTensionDevice';

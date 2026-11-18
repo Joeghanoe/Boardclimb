@@ -1,1 +1,1 @@
-export { AuroraLedEncoder } from './AuroraLedEncoder';
+export * from './lighting/AuroraLedEncoder';

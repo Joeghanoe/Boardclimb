@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { parseProblemKey } from '@boardclimb/domain';
 import type { BoardConfiguration } from '@boardclimb/domain';
-import type { BoardCatalog } from '../BoardCatalog';
-import { CatalogError } from '../CatalogError';
+import type { BoardCatalog } from '../catalog/BoardCatalog';
+import { CatalogError } from '../catalog/CatalogError';
 
 export interface CatalogContractSubject {
   catalog: BoardCatalog;

@@ -1,3 +1,2 @@
-export * from './createKilterController';
-
-export { matchKilterDevice } from './matchKilterDevice';
+export * from './controller/createKilterController';
+export * from './device/matchKilterDevice';
