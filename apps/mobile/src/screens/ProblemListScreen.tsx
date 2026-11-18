@@ -167,7 +167,7 @@ export function ProblemListScreen({
           value={downloaded ? 'downloaded' : 'board'}
           onChange={(next) => {
             setDownloaded(next === 'downloaded');
-            if (next === 'board' && !selection) onChooseLayout();
+            if (next === 'board' && !selection) onOpenBoard();
           }}
         />
       </View>
@@ -248,7 +248,7 @@ export function ProblemListScreen({
           {filtered ? (
             <Button label="Clear filters" onPress={() => onChangeFilters(defaultProblemFilters)} />
           ) : null}
-          <Button label="Choose a board layout" onPress={onChooseLayout} />
+          <Button label="Find my board" onPress={onOpenBoard} />
         </View>
       );
     }
@@ -258,7 +258,7 @@ export function ProblemListScreen({
           <AppText variant="title" style={styles.centered}>
             Choose your board layout to see problems
           </AppText>
-          <Button label="Choose layout" variant="primary" large onPress={onChooseLayout} />
+          <Button label="Find my board" variant="primary" large onPress={onOpenBoard} />
         </View>
       );
     }

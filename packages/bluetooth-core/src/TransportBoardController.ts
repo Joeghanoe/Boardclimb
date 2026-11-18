@@ -73,6 +73,7 @@ export class TransportBoardController implements BoardController {
         boards.push({
           id: device.id,
           name: device.name,
+          ...(device.rssi === undefined ? {} : { rssi: device.rssi }),
           manufacturer: this.manufacturer,
           detectedConfigurationId: match.configurationId,
         });

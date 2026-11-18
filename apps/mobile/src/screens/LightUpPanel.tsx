@@ -26,13 +26,13 @@ export function LightUpPanel({ problem, snapshot, onLightUp, onOpenBoard }: Ligh
       </View>
 
       <Button
-        label="Light up"
+        label={needsBoard ? 'Connect to a board' : 'Light up'}
         variant="primary"
         large
         busy={pending}
-        disabled={problem === null}
-        accessibilityHint="Sends this problem to the connected board"
-        onPress={onLightUp}
+        disabled={!needsBoard && problem === null}
+        accessibilityHint={needsBoard ? 'Opens nearby boards' : 'Sends this problem to the connected board'}
+        onPress={needsBoard ? onOpenBoard : onLightUp}
       />
 
       {line?.tone === 'error' ? (
@@ -40,7 +40,6 @@ export function LightUpPanel({ problem, snapshot, onLightUp, onOpenBoard }: Ligh
           tone="error"
           title={line.title}
           {...(line.message === undefined ? {} : { message: line.message })}
-          {...(needsBoard ? { actionLabel: 'Open boards', onAction: onOpenBoard } : {})}
         />
       ) : line ? (
         <View
