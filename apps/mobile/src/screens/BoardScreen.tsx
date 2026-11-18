@@ -1,12 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ScrollViewInstance } from 'react-native';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import type { BoardErrorCode, BoardSelection, DiscoveredBoard } from '@boardclimb/application';
+import type {
+  BoardErrorCode,
+  BoardSelection,
+  DirectoryEntry,
+  DiscoveredBoard,
+} from '@boardclimb/application';
 import {
   AppText,
   Button,
   Card,
-  Chip,
   Notice,
   radii,
   spacing,
@@ -14,7 +18,6 @@ import {
   useTheme,
 } from '@boardclimb/design-system';
 import { MANUFACTURERS } from '@boardclimb/domain';
-import type { BoardConfiguration, Manufacturer } from '@boardclimb/domain';
 import type { AppContainer } from '../composition/AppContainer';
 import { ConfigurationSheet } from './ConfigurationSheet';
 import { ModeBanner } from './ModeBanner';
@@ -29,6 +32,8 @@ interface BoardScreenProps {
   selection: BoardSelection | null;
   onBack: () => void;
   onOpenDiagnostics: () => void;
+  onChooseLayout: () => void;
+  onUseLayout: (selection: BoardSelection) => void;
 }
 
 type Scan =
@@ -39,76 +44,105 @@ type Scan =
 
 /**
  * Connect a physical board controller.
- * The climber initiates scanning and manually picks the board and its wall layout.
+ * Opening Boards scans nearby. The climber chooses the board and confirms its layout.
  * Connecting never auto-lights LEDs and never connects automatically (FR-002, FR-003, FR-011, FR-017).
  */
-export function BoardScreen({ container, selection, onBack, onOpenDiagnostics }: BoardScreenProps) {
+export function BoardScreen({
+  container,
+  selection,
+  onBack,
+  onOpenDiagnostics,
+  onChooseLayout,
+  onUseLayout,
+}: BoardScreenProps) {
   const { colors } = useTheme();
   const scanEpoch = useRef(0);
   const scroll = useRef<ScrollViewInstance>(null);
   const [editingLayout, setEditingLayout] = useState(false);
   const snapshot = useBoardSnapshot(container.session);
-  const [manufacturer, setManufacturer] = useState<Manufacturer>(
-    selection?.configuration.manufacturer ?? 'kilter',
-  );
   const [scan, setScan] = useState<Scan>({ state: 'idle' });
   const [choosing, setChoosing] = useState<DiscoveredBoard | null>(null);
-  const [layouts, setLayouts] = useState<BoardConfiguration[]>([]);
+  const [entries, setEntries] = useState<DirectoryEntry[] | null>(null);
   const [layoutId, setLayoutId] = useState<string | null>(null);
+  const entry = entries?.find((candidate) => candidate.manufacturer === choosing?.manufacturer);
+  const boards = entry?.ok ? entry.boards : [];
+  const layouts = boards.flatMap((board) => board.configurations);
 
   useEffect(() => {
     let cancelled = false;
-    container.directory.list().then((entries) => {
-      const entry = entries.find((candidate) => candidate.manufacturer === manufacturer);
-      if (!cancelled) {
-        setLayouts(entry?.ok ? entry.boards.flatMap((board) => board.configurations) : []);
-      }
+    void container.directory.list().then((listed) => {
+      if (!cancelled) setEntries(listed);
     });
     return () => {
       cancelled = true;
     };
-  }, [container, manufacturer]);
-
-  useEffect(
-    () => () => {
-      scanEpoch.current += 1;
-    },
-    [],
-  );
+  }, [container]);
 
   useEffect(() => {
     if (choosing) scroll.current?.scrollTo({ y: 0, animated: false });
   }, [choosing]);
 
-  const search = async () => {
+  const search = useCallback(async () => {
     const epoch = ++scanEpoch.current;
     setChoosing(null);
     setScan({ state: 'scanning' });
-    const result = await container.session.discover(manufacturer);
+    const results = await Promise.all(
+      MANUFACTURERS.map((manufacturer) => container.session.discover(manufacturer)),
+    );
     if (epoch !== scanEpoch.current) return;
-    setScan(result.ok ? { state: 'done', boards: result.boards } : { state: 'failed', code: result.code });
-  };
+    const found = results
+      .flatMap((result) => (result.ok ? result.boards : []))
+      .sort((a, b) => (b.rssi ?? -Infinity) - (a.rssi ?? -Infinity));
+    const failure = results.find((result) => !result.ok);
+    setScan(
+      found.length === 0 && failure
+        ? { state: 'failed', code: failure.code }
+        : { state: 'done', boards: found },
+    );
+  }, [container]);
+
+  useEffect(() => {
+    const connection = container.session.snapshot().connection;
+    if (connection === 'idle' || connection === 'failed') void search();
+    return () => {
+      scanEpoch.current += 1;
+    };
+  }, [container, search]);
 
   const pick = (board: DiscoveredBoard) => {
     setChoosing(board);
-    const suggested =
-      layouts.find((layout) => layout.id === board.detectedConfigurationId) ??
-      (selection?.configuration.manufacturer === board.manufacturer ? selection.configuration : null);
-    setLayoutId(suggested?.id ?? null);
-    setEditingLayout(suggested === null);
+    setLayoutId(null);
+    setEditingLayout(false);
   };
 
+  const suggestedId =
+    layouts.find((layout) => layout.id === choosing?.detectedConfigurationId)?.id ??
+    (snapshot.board?.id === choosing?.id ? snapshot.configuration?.id : null) ??
+    (selection?.configuration.manufacturer === choosing?.manufacturer ? selection?.configuration.id : null);
+  const selectedLayout = layouts.find((layout) => layout.id === (layoutId ?? suggestedId));
+
   const connect = () => {
-    const layout = layouts.find((candidate) => candidate.id === layoutId);
-    if (!choosing || !layout) return;
-    void container.session.connect(choosing, layout);
+    if (!choosing || !selectedLayout) return;
+    const board = boards.find(({ configurations }) => configurations.includes(selectedLayout));
+    if (!board) return;
+    onUseLayout({ boardName: board.board.name, configuration: selectedLayout });
+    void container.session.connect(choosing, selectedLayout);
     setChoosing(null);
   };
 
   const failure = scan.state === 'failed' ? describeBoardError(scan.code) : null;
+  const discovered = scan.state === 'done' ? scan.boards : [];
+  const duplicateNames = new Set(
+    discovered
+      .filter((board, index) => discovered.findIndex((other) => other.name === board.name) !== index)
+      .map((board) => board.name),
+  );
+  const boardLabel = (board: DiscoveredBoard) => {
+    const name = board.name ?? 'Unnamed board';
+    return duplicateNames.has(board.name) ? `${name} · ${board.id.slice(-4)}` : name;
+  };
   const connectionError = snapshot.error ? describeBoardError(snapshot.error.code) : null;
   const connected = snapshot.connection === 'connected';
-  const selectedLayout = layouts.find((c) => c.id === layoutId);
 
   const connectionTone = connected
     ? colors.connected
@@ -213,6 +247,16 @@ export function BoardScreen({ container, selection, onBack, onOpenDiagnostics }:
             />
           ) : null}
 
+          {connected && snapshot.board && !choosing ? (
+            <Button
+              label="Change wall layout"
+              onPress={() => {
+                if (snapshot.board) pick(snapshot.board);
+                setEditingLayout(true);
+              }}
+            />
+          ) : null}
+
           {connected || snapshot.connection === 'lost' || snapshot.connection === 'connecting' ? (
             <Button
               label={snapshot.connection === 'connecting' ? 'Cancel connection' : 'Disconnect'}
@@ -236,13 +280,13 @@ export function BoardScreen({ container, selection, onBack, onOpenDiagnostics }:
 
             <View style={styles.controllerDetail}>
               <AppText variant="title" accessibilityRole="header" aria-level={2} style={styles.boldTitle}>
-                Connect to {choosing.name ?? 'This Board'}
+                Connect to {boardLabel(choosing)}
               </AppText>
               <View style={styles.hardwareSpecs}>
                 <AppText variant="caption" tone="muted">
                   Brand: {describeManufacturer(choosing.manufacturer)}
                 </AppText>
-                {choosing.detectedConfigurationId ? (
+                {selectedLayout && selectedLayout.id === choosing.detectedConfigurationId ? (
                   <AppText variant="caption" style={{ color: colors.accent, fontWeight: '700' }}>
                     Layout auto-detected
                   </AppText>
@@ -264,7 +308,13 @@ export function BoardScreen({ container, selection, onBack, onOpenDiagnostics }:
                   {describeConfiguration(selectedLayout)}
                 </AppText>
               ) : (
-                <AppText tone="muted">Choose the layout, size and angle shown at this wall.</AppText>
+                <AppText tone="muted">
+                  {entries === null
+                    ? 'Loading layouts…'
+                    : entry && !entry.ok
+                      ? 'Layouts are unavailable. Go back and try again.'
+                      : 'Choose the layout and angle. The controller did not identify the wall layout.'}
+                </AppText>
               )}
             </View>
 
@@ -276,13 +326,17 @@ export function BoardScreen({ container, selection, onBack, onOpenDiagnostics }:
               onPress={connect}
             />
 
-            <Button label="Change layout" onPress={() => setEditingLayout(true)} />
+            <Button
+              label={selectedLayout ? 'Change layout' : 'Choose layout'}
+              disabled={layouts.length === 0}
+              onPress={() => setEditingLayout(true)}
+            />
 
             <ConfigurationSheet
               visible={editingLayout}
               title={describeManufacturer(choosing.manufacturer)}
               configurations={layouts}
-              selectedId={layoutId}
+              selectedId={selectedLayout?.id ?? null}
               onChoose={(configuration) => {
                 setLayoutId(configuration.id);
                 setEditingLayout(false);
@@ -308,25 +362,6 @@ export function BoardScreen({ container, selection, onBack, onOpenDiagnostics }:
             <AppText variant="title" accessibilityRole="header" aria-level={2} style={styles.boldTitle}>
               Find controllers
             </AppText>
-            <AppText variant="caption" tone="muted">
-              Choose a brand to scan nearby.
-            </AppText>
-          </View>
-
-          <View style={styles.chips}>
-            {MANUFACTURERS.map((candidate) => (
-              <Chip
-                key={candidate}
-                label={describeManufacturer(candidate)}
-                selected={candidate === manufacturer}
-                onPress={() => {
-                  scanEpoch.current += 1;
-                  setManufacturer(candidate);
-                  setScan({ state: 'idle' });
-                  setChoosing(null);
-                }}
-              />
-            ))}
           </View>
 
           <Button
@@ -346,16 +381,22 @@ export function BoardScreen({ container, selection, onBack, onOpenDiagnostics }:
             />
           ) : null}
 
-          {scan.state === 'done' && scan.boards.length > 0 ? (
+          {discovered.length > 0 ? (
             <View style={styles.discoveredList}>
               <AppText variant="caption" style={{ color: colors.textMuted, fontWeight: '800' }}>
-                DISCOVERED CONTROLLERS ({scan.boards.length})
+                NEARBY BOARDS
               </AppText>
-              {scan.boards.map((board) => (
+              {duplicateNames.size > 0 ? (
+                <AppText variant="caption" tone="muted">
+                  Some boards share a name. Move close to your wall and scan again. Stronger signals appear
+                  first.
+                </AppText>
+              ) : null}
+              {discovered.map((board) => (
                 <Pressable
-                  key={board.id}
+                  key={`${board.manufacturer}/${board.id}`}
                   accessibilityRole="button"
-                  accessibilityLabel={`Select controller ${board.name ?? 'Unnamed board'}`}
+                  accessibilityLabel={`Select ${boardLabel(board)}`}
                   accessibilityHint="Choose this controller to pair"
                   onPress={() => pick(board)}
                   style={({ pressed }) => [
@@ -369,7 +410,7 @@ export function BoardScreen({ container, selection, onBack, onOpenDiagnostics }:
                 >
                   <View style={styles.discoveredInfo}>
                     <AppText variant="bodyStrong" style={styles.boldTitle}>
-                      {board.name ?? 'Unnamed controller'}
+                      {boardLabel(board)}
                     </AppText>
                     <AppText variant="caption" tone="muted">
                       {describeManufacturer(board.manufacturer)} controller
@@ -393,6 +434,8 @@ export function BoardScreen({ container, selection, onBack, onOpenDiagnostics }:
             </View>
           ) : null}
         </Card>
+
+        <Button label="Browse without connecting" onPress={onChooseLayout} />
 
         {/* DIAGNOSTICS NAVIGATION FOOTER */}
         <Card style={[styles.diagnosticsCard, { backgroundColor: colors.surface }]}>
