@@ -94,6 +94,23 @@ describe('recorded BoardSesh catalogs (FR-001, FR-005, FR-006)', () => {
     }
   });
 
+  it('FR-005: only boards with a layout to choose are offered', async () => {
+    for (const manufacturer of ['kilter', 'moonboard', 'tension'] as const) {
+      const source = new SnapshotProviderSource(manufacturer, {
+        open: async () => ({ all: async () => [] }),
+      });
+      const boards = await source.fetchBoards();
+      expect(boards.length).toBeGreaterThan(0);
+      for (const board of boards)
+        expect((await source.fetchConfigurations(board.id)).length, board.name).toBeGreaterThan(0);
+    }
+    const kilter = await new SnapshotProviderSource('kilter', {
+      open: async () => ({ all: async () => [] }),
+    }).fetchBoards();
+    expect(kilter.map((board) => board.name)).not.toContain('JUUL');
+    expect(kilter.map((board) => board.name)).not.toContain('Tycho');
+  });
+
   it('FR-005 accepts exactly the listed configuration ids for every manufacturer', async () => {
     for (const manufacturer of ['kilter', 'moonboard', 'tension'] as const) {
       const source = new SnapshotProviderSource(manufacturer, {

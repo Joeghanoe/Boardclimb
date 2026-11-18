@@ -63,8 +63,10 @@ export class SnapshotProviderSource implements ProviderSource {
   }
 
   async fetchBoards(): Promise<BoardModel[]> {
+    // A board with no layouts (JUUL, Tycho) has nothing to choose, so it is not offered.
     return hardware.products
       .filter((p) => p.board_type === this.manufacturer)
+      .filter((p) => (this.index.configurationsByBoard.get(String(p.id))?.length ?? 0) > 0)
       .map((p) => ({ id: String(p.id), manufacturer: this.manufacturer, name: p.name }));
   }
 
