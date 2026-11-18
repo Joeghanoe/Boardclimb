@@ -51,15 +51,19 @@ export function AppShell({ container }: AppShellProps) {
 
   if (!browse.loaded) return null;
   const { route } = navigation;
-  const openBoard = () => navigation.push({ name: 'board' });
-  /** A problem may belong to another layout (downloaded list): select its layout first. */
-  const selectFor = async (summary: ProblemSummary) => {
+  const openBoard = () =>
+    navigation.push({
+      name: 'board',
+      selection: route.name === 'problem' ? route.selection : browse.selection,
+    });
+  const selectionFor = async (summary: ProblemSummary) => {
     if (
       !browse.selection ||
       browse.selection.configuration.id !== summary.configurationId ||
       browse.selection.configuration.manufacturer !== summary.manufacturer
     )
-      browse.chooseSelection(await container.directory.selectionFor(summary));
+      return container.directory.selectionFor(summary);
+    return browse.selection;
   };
   const neighbour = (summary: ProblemSummary, step: 1 | -1) => {
     const index = browsed.items.findIndex((item) => item.key === summary.key);
@@ -67,7 +71,9 @@ export function AppShell({ container }: AppShellProps) {
   };
   const stepTo = (target: ProblemSummary, direction: 1 | -1) => {
     setStepDirection(direction);
-    void selectFor(target).then(() => navigation.replace({ name: 'problem', summary: target }));
+    void selectionFor(target)
+      .then((selection) => navigation.replace({ name: 'problem', summary: target, selection }))
+      .catch(() => undefined);
   };
   const nextFor = (summary: ProblemSummary) => {
     const target = neighbour(summary, 1);
@@ -95,10 +101,10 @@ export function AppShell({ container }: AppShellProps) {
       case 'problems':
         return null;
       case 'problem':
-        return browse.selection ? (
+        return (
           <ProblemDetailScreen
             container={container}
-            selection={browse.selection}
+            selection={route.selection}
             summary={route.summary}
             gradeScale={browse.gradeScale}
             onBack={navigation.pop}
@@ -111,7 +117,7 @@ export function AppShell({ container }: AppShellProps) {
             onPrevious={previousFor(route.summary)}
             onNext={nextFor(route.summary)}
           />
-        ) : null;
+        );
       case 'layout':
         return (
           <LayoutScreen
@@ -129,8 +135,13 @@ export function AppShell({ container }: AppShellProps) {
         return (
           <BoardScreen
             container={container}
-            selection={browse.selection}
+            selection={route.selection}
             onBack={navigation.pop}
+            onChooseLayout={() => navigation.replace({ name: 'layout' })}
+            onUseLayout={(selection) => {
+              setMode('board');
+              browse.chooseSelection(selection);
+            }}
             onOpenDiagnostics={() => navigation.push({ name: 'diagnostics' })}
           />
         );
@@ -165,8 +176,8 @@ export function AppShell({ container }: AppShellProps) {
             gradeScale={browse.gradeScale}
             onChangeGradeScale={browse.changeGradeScale}
             onOpenProblem={async (summary) => {
-              await selectFor(summary);
-              navigation.push({ name: 'problem', summary });
+              const selection = await selectionFor(summary);
+              navigation.push({ name: 'problem', summary, selection });
             }}
             onListChange={reportList}
             onChooseLayout={() => navigation.push({ name: 'layout' })}

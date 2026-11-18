@@ -15,12 +15,19 @@ export class NativeBleTransport implements BleTransport {
     { device: Device; characteristic: Characteristic; subscription: Subscription }
   >();
   private readonly listeners = new Set<(id: string) => void>();
+  private permissionRequest: Promise<'granted' | 'denied'> | null = null;
   private scanning: Promise<BleDevice[]> | null = null;
   private get radio(): BleManager {
     return (this.manager ??= new BleManager());
   }
 
-  async requestPermission(): Promise<'granted' | 'denied'> {
+  requestPermission(): Promise<'granted' | 'denied'> {
+    return (this.permissionRequest ??= this.checkPermission().finally(() => {
+      this.permissionRequest = null;
+    }));
+  }
+
+  private async checkPermission(): Promise<'granted' | 'denied'> {
     if (Platform.OS === 'android') {
       const permissions =
         Number(Platform.Version) >= 31
@@ -67,7 +74,13 @@ export class NativeBleTransport implements BleTransport {
           reject(error);
           return;
         }
-        if (device) found.set(device.id, { id: device.id, name: device.name ?? device.localName });
+        if (device) {
+          found.set(device.id, {
+            id: device.id,
+            name: device.name ?? device.localName,
+            ...(device.rssi === null ? {} : { rssi: device.rssi }),
+          });
+        }
       });
     }).finally(() => {
       this.scanning = null;
