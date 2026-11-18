@@ -184,7 +184,7 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
             <AppText
               variant="label"
               accessibilityLabel={
-                selected?.angleDegrees == null ? undefined : `${selected.angleDegrees} degrees`
+                selected && selected.angleDegrees !== null ? `${selected.angleDegrees} degrees` : undefined
               }
             >
               {selected ? (selected.angleDegrees === null ? 'Fixed' : `${selected.angleDegrees}°`) : '–'}
