@@ -1,6 +1,6 @@
 # ADR-0004: Toolchain, workspace layout and test strategy
 
-- **Status:** Accepted. Amended the same day: Bun replaces npm and Vitest (product owner request), see section 5.
+- **Status:** Accepted. Amended the same day: Bun replaces npm and Vitest (product owner request), see section 5. Amended 2026-11-17: Bun's built-in formatter, linter and type checker replace Prettier, ESLint and `tsc`, see section 7.
 - **Date:** 2026-11-16
 - **Decision owners:** Engineering team
 - **Related:** ADR-0002 (sections 2.1, 2.7), ADR-0003
@@ -12,24 +12,24 @@ ADR-0002 chose React Native with TypeScript and a modular monorepo whose package
 ## 2. Decision
 
 1. **Bun workspaces** (`apps/*`, `packages/*`), one `bun.lock`, no separate publishing. Bun is the package manager and the runner for every development script. `bunfig.toml` pins the **hoisted** linker, because Metro and Expo are tested against a hoisted `node_modules` and Bun 1.4 defaults to an isolated one.
-2. **TypeScript** in `strict` mode with `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` on. One root `tsconfig.json` type-checks every workspace with `tsc --noEmit`; packages expose their TypeScript sources (`exports` points at `src/index.ts`) and there is no per-package `dist` build, so Metro, `bun test` and `tsc` all read the same files. Path aliases (`@boardclimb/*`) mirror the workspace names; Bun reads them natively.
+2. **TypeScript** in `strict` mode with `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` on. One root `tsconfig.json` type-checks every workspace with `bun check` (section 7); packages expose their TypeScript sources (`exports` points at `src/index.ts`) and there is no per-package `dist` build, so Metro, `bun test` and `bun check` all read the same files. Path aliases (`@boardclimb/*`) mirror the workspace names; Bun reads them natively.
 3. **`bun test`** runs all tests. Test layers (T.3): layer 0 is unit and contract tests with fakes plus SQLite tests on a real in-memory database; scenario tests (T.5) drive use cases through the real composition root with fakes for radio, clock and ids. Every scenario carries a stable ID (AC-xx or FR-xx) in its name. Scale tests are named `*.scale.test.ts` and are skipped by `verify:fast`.
 4. **Mobile app is an Expo project with a development client** (not Expo Go), because BLE needs native modules. Screens render in a browser through `react-native-web` so layouts can be screenshotted and checked (UI-1) where no device exists; that is a rendering aid, not a supported target. **Expo's CLI and Metro keep running on Node**, the runtime React Native tooling is tested against; React Native 0.88 requires Node 22.13, 24.3 or 26.
 5. **`bun:sqlite`** (built in) is the SQLite used by tests; `expo-sqlite` is the device driver; both sit behind the same `SqlDatabase` port.
-6. **One verify command**, `bun run verify` (`scripts/verify.ts`): prettier check, ESLint and `tsc --noEmit` run in parallel through `Bun.spawn`, then `bun test` runs alone because the scale tests assert time budgets. The project verify and CI run it. Dev scripts and architecture tests use Bun's native APIs (`Bun.spawn`, `Bun.Glob`, `Bun.file`, `import.meta.dir`).
-7. **ESLint with typescript-eslint and Prettier** for lint and format, run on Bun's runtime (`bun --bun`). Each exported type or component has its own matching file (CODE.5 for TypeScript).
+6. **One verify command**, `bun run verify` (`scripts/verify.ts`): `bun fmt --check`, `bun lint` and `bun check` run in parallel through `Bun.spawn`, then `bun test` runs alone because the scale tests assert time budgets. The project verify and CI run it. Dev scripts and architecture tests use Bun's native APIs (`Bun.spawn`, `Bun.Glob`, `Bun.file`, `import.meta.dir`).
+7. **Bun's built-in `bun fmt` and `bun lint`** for format and lint, configured in `bunfig.toml` (`[fmt]`, `[lint]`); see section 7. Each exported type or component has its own matching file (CODE.5 for TypeScript).
 
 ## 3. Alternatives considered
 
-| Option                   | Assessment                                                                                       | Decision                                   |
-| ------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------ |
-| npm workspaces + Vitest  | Ships with Node, most widely used; verify took about 12 s, tests about 4.4 s                     | Superseded by Bun (see section 5)          |
-| pnpm workspaces          | Fast installs, extra tool on every developer and CI machine                                      | Not selected                               |
-| Jest                     | Expo default, but needs Babel transforms for TypeScript and ESM workspaces                       | Not selected                               |
-| Bare React Native CLI    | More control, more native setup; Expo prebuild gives the same native access                      | Not selected                               |
-| Expo Go only             | Cannot load a BLE module                                                                         | Not selected                               |
-| Biome or oxlint          | Much faster lint and format; would drop or rewrite the custom T.2 clock rules written for ESLint | Deferred, can be added without Bun changes |
-| Bun as runtime for Metro | Not what React Native tooling is tested against                                                  | Not selected                               |
+| Option                   | Assessment                                                                                       | Decision                                  |
+| ------------------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------- |
+| npm workspaces + Vitest  | Ships with Node, most widely used; verify took about 12 s, tests about 4.4 s                     | Superseded by Bun (see section 5)         |
+| pnpm workspaces          | Fast installs, extra tool on every developer and CI machine                                      | Not selected                              |
+| Jest                     | Expo default, but needs Babel transforms for TypeScript and ESM workspaces                       | Not selected                              |
+| Bare React Native CLI    | More control, more native setup; Expo prebuild gives the same native access                      | Not selected                              |
+| Expo Go only             | Cannot load a BLE module                                                                         | Not selected                              |
+| Biome or oxlint          | Much faster lint and format; would drop or rewrite the custom T.2 clock rules written for ESLint | Not selected; Bun's built-ins (section 7) |
+| Bun as runtime for Metro | Not what React Native tooling is tested against                                                  | Not selected                              |
 
 ## 4. Consequences
 
@@ -57,3 +57,15 @@ on Linux. No dependencies or stored layouts change. These checks establish the
 local tooling baseline; they do not establish native or BLE behaviour or a hosted
 CI result. The workflow in `docs/ci-proposal.md` is a proposal for a human to activate
 under CLD.2.
+
+## 7. Amendment: Bun's built-in formatter, linter and type checker (2026-11-17)
+
+The product owner asked to replace development tools with Bun's native ones where Bun has them, to cut dependencies.
+
+- **Format:** `bun fmt` replaces Prettier. Its output matches Prettier's; the options and ignore list moved from `.prettierrc.json` and `.prettierignore` to `bunfig.toml` `[fmt]`. No file changed formatting.
+- **Lint:** `bun lint` replaces ESLint, `@eslint/js` and typescript-eslint. `bunfig.toml` `[lint]` lists the rules the ESLint recommended configs enabled, the repo's own rules and the T.2 clock and id override; every rule runs natively. Default rule categories are off so a Bun upgrade cannot widen the set. Bun adds its `bun:test` rules (no focused or disabled tests) and `react/jsx-uses-react`, because the repo uses `bun test` and React. Planted violations of each custom rule were reported, and the T.2 rules stay silent in `apps/mobile/src/composition`.
+- **Types:** `bun check` replaces `tsc --noEmit`. It follows TypeScript 7, which removed `baseUrl`, so `tsconfig.json` drops `baseUrl` and its `paths` entries start with `./`; `tsc` 5.9 accepts the same file. The `typescript` package stays for Expo and editors.
+
+Measured on this repo: format 1.7 s to 0.04 s, lint 1.3 s to under 0.1 s, types 1.4 s to 0.2 s. Four development dependencies (`prettier`, `eslint`, `@eslint/js`, `typescript-eslint`) and their transitive packages are gone.
+
+**Consequence: Bun canary.** `bun lint` ships only in canary builds; the latest release, 1.4.4, has `bun fmt` and `bun check` but not `bun lint`. The product owner chose to move to canary now rather than keep ESLint, reversing section 6's pin to a released Bun. `packageManager` records `1.4.5-canary.1`, the build verified locally; CI installs the rolling `canary` tag, because `setup-bun` cannot pin one canary build, and prints `bun --revision` so a failing run names its build. Return to a pinned release once one includes `bun lint`.

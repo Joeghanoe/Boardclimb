@@ -4,3 +4,116 @@ linker = "hoisted"
 
 [test]
 timeout = 30000
+
+[fmt]
+# `bun fmt` (Prettier-compatible output, ADR-0004 section 7).
+singleQuote = true
+printWidth = 110
+trailingComma = "all"
+ignorePatterns = [
+  "bun.lock",
+  "dist/",
+  ".expo/",
+  "artifacts/",
+  "REPORT.md",
+  "docs/adr/ADR-0001-*.md",
+  "docs/adr/ADR-0002-*.md",
+  # Recorded, compact public hardware metadata (no art or user data).
+  "packages/provider-snapshots/data/hardware.json",
+]
+
+[lint]
+# `bun lint` (ADR-0004 section 7): ESLint and typescript-eslint recommended rules, plus the repo's own.
+ignorePatterns = ["dist/", ".expo/", "artifacts/", "coverage/"]
+
+[lint.categories]
+# Default categories stay off so a Bun upgrade cannot widen the rule set; the rules below are listed explicitly.
+# Bun also enables its bun:test plugin rules (no focused or disabled tests) because the repo uses bun test.
+all = "off"
+
+[lint.rules]
+"@typescript-eslint/ban-ts-comment" = "error"
+"@typescript-eslint/consistent-type-imports" = "error"
+"@typescript-eslint/no-array-constructor" = "error"
+"@typescript-eslint/no-duplicate-enum-values" = "error"
+"@typescript-eslint/no-empty-object-type" = "error"
+"@typescript-eslint/no-explicit-any" = "error"
+"@typescript-eslint/no-extra-non-null-assertion" = "error"
+"@typescript-eslint/no-misused-new" = "error"
+"@typescript-eslint/no-namespace" = "error"
+"@typescript-eslint/no-non-null-asserted-optional-chain" = "error"
+"@typescript-eslint/no-require-imports" = "error"
+"@typescript-eslint/no-this-alias" = "error"
+"@typescript-eslint/no-unnecessary-type-constraint" = "error"
+"@typescript-eslint/no-unsafe-declaration-merging" = "error"
+"@typescript-eslint/no-unsafe-function-type" = "error"
+"@typescript-eslint/no-unused-expressions" = "error"
+"@typescript-eslint/no-unused-vars" = ["error", { argsIgnorePattern = "^_" }]
+"@typescript-eslint/no-wrapper-object-types" = "error"
+"@typescript-eslint/prefer-as-const" = "error"
+"@typescript-eslint/prefer-namespace-keyword" = "error"
+"@typescript-eslint/triple-slash-reference" = "error"
+eqeqeq = "error"
+for-direction = "error"
+no-async-promise-executor = "error"
+no-case-declarations = "error"
+no-compare-neg-zero = "error"
+no-cond-assign = "error"
+no-constant-binary-expression = "error"
+no-constant-condition = "error"
+no-control-regex = "error"
+no-debugger = "error"
+no-delete-var = "error"
+no-dupe-else-if = "error"
+no-duplicate-case = "error"
+no-empty = "error"
+no-empty-character-class = "error"
+no-empty-pattern = "error"
+no-empty-static-block = "error"
+no-ex-assign = "error"
+no-extra-boolean-cast = "error"
+no-fallthrough = "error"
+no-global-assign = "error"
+no-invalid-regexp = "error"
+no-irregular-whitespace = "error"
+no-loss-of-precision = "error"
+no-misleading-character-class = "error"
+no-nonoctal-decimal-escape = "error"
+no-octal = "error"
+no-prototype-builtins = "error"
+no-regex-spaces = "error"
+no-self-assign = "error"
+no-shadow-restricted-names = "error"
+no-sparse-arrays = "error"
+no-unassigned-vars = "error"
+no-unexpected-multiline = "error"
+no-unsafe-finally = "error"
+no-unsafe-optional-chaining = "error"
+no-unused-labels = "error"
+no-unused-private-class-members = "error"
+no-useless-assignment = "error"
+no-useless-backreference = "error"
+no-useless-catch = "error"
+no-useless-escape = "error"
+no-var = "error"
+prefer-const = "error"
+prefer-rest-params = "error"
+prefer-spread = "error"
+preserve-caught-error = "error"
+require-yield = "error"
+use-isnan = "error"
+valid-typeof = "error"
+
+[[lint.overrides]]
+# T.2: business code takes time and ids through ports; only composition roots read the ambient clock.
+files = ["packages/**/src/**/*.ts", "apps/**/src/**/*.ts", "apps/**/src/**/*.tsx"]
+excludeFiles = ["**/*.test.ts", "**/*.test.tsx", "apps/mobile/src/composition/**"]
+
+[lint.overrides.rules]
+no-restricted-globals = ["error", { name = "localStorage", message = "Use a store port." }]
+no-restricted-syntax = [
+  "error",
+  { selector = "CallExpression[callee.object.name='Date'][callee.property.name='now']", message = "Read time through the Clock port (T.2)." },
+  { selector = "NewExpression[callee.name='Date'][arguments.length=0]", message = "Read time through the Clock port (T.2)." },
+  { selector = "CallExpression[callee.object.name='Math'][callee.property.name='random']", message = "Take ids from the IdGenerator port (T.2)." },
+]

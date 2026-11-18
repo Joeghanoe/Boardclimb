@@ -23,7 +23,9 @@ jobs:
           package-manager-cache: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version-file: package.json
+          # bun lint ships only in canary builds so far (ADR-0004 section 7); setup-bun cannot pin one build.
+          bun-version: canary
+      - run: bun --revision
       - run: bun install --frozen-lockfile
       - run: bun run verify
       - run: bun run --cwd apps/mobile export:web
@@ -44,7 +46,9 @@ jobs:
           package-manager-cache: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version-file: package.json
+          # bun lint ships only in canary builds so far (ADR-0004 section 7); setup-bun cannot pin one build.
+          bun-version: canary
+      - run: bun --revision
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin

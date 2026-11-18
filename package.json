@@ -8,13 +8,13 @@
     "packages/*"
   ],
   "engines": {
-    "bun": ">=1.3.0"
+    "bun": ">=1.4.5-canary.1"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint .",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "typecheck": "bun check",
+    "lint": "bun lint",
+    "format": "bun fmt",
+    "format:check": "bun fmt --check",
     "test": "bun test",
     "test:fast": "bun test --path-ignore-patterns '**/*.scale.test.ts'",
     "verify": "bun scripts/verify.ts",
@@ -22,14 +22,10 @@
     "web": "bun run --cwd apps/mobile web"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@types/bun": "^1.4.4",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
-    "eslint": "^10.15.0",
-    "prettier": "^3.10.1",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.73.0"
+    "typescript": "^5.9.3"
   },
-  "packageManager": "bun@1.4.4"
+  "packageManager": "bun@1.4.5-canary.1"
 }

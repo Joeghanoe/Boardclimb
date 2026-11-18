@@ -80,11 +80,12 @@ verification and Expo/Metro there, through `wsl.exe -d Ubuntu -- bash -lc` when
 starting from PowerShell. The checkout under `D:\Prototypes\BoardClimb` is a
 separate Windows copy; changes are not automatically synchronized. Do not run
 against `/mnt/d` or push into the Windows checkout's checked-out branch. Use
-Node from `.node-version` and stable Bun from `packageManager` in `package.json`.
+Node from `.node-version` and the Bun canary recorded in `packageManager` in `package.json`
+(`bun upgrade --canary`; `bun lint` is not in a released Bun yet, ADR-0004 section 7).
 
 ## Verifying
 
-CI runs `bun install --frozen-lockfile`, then `bun run verify` (`scripts/verify.ts`: format check, lint and `tsc --noEmit` in parallel, then `bun test` including the architecture tests). The agent's quick check is the project verify in `~/.golden-path-harness/projects/` (`--fast` skips the SQLite scale tests); this repo carries no copy of it. The design gate (`tvh greenfield check`) runs in design-only mode because its code checks are C# specific; the active `.github/workflows/verify.yml` runs the same project gate, web/iOS JavaScript exports and Android compilation. CI activation was part of the product owner’s 2026-11-17 request to finish the remaining MVP; deployment and signed release publication remain separate human actions.
+CI runs `bun install --frozen-lockfile`, then `bun run verify` (`scripts/verify.ts`: `bun fmt --check`, `bun lint` and `bun check` in parallel, then `bun test` including the architecture tests). The agent's quick check is the project verify in `~/.golden-path-harness/projects/` (`--fast` skips the SQLite scale tests); this repo carries no copy of it. The design gate (`tvh greenfield check`) runs in design-only mode because its code checks are C# specific; the active `.github/workflows/verify.yml` runs the same project gate, web/iOS JavaScript exports and Android compilation. CI activation was part of the product owner’s 2026-11-17 request to finish the remaining MVP; deployment and signed release publication remain separate human actions.
 
 Every required local check also runs in CI using the same implementation and effective policy: `bun run verify` is that implementation. ADRs live in `docs/adr/`. Screens are verified by rendering the app with react-native-web and screenshotting at 320, 390, 768 and 1280 px (UI-1). Real-device, BLE and vendor checks are not run here; missing evidence stays listed in the design's Known limits.
 

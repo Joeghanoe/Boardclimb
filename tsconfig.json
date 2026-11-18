@@ -16,15 +16,14 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "types": ["bun"],
-    "baseUrl": ".",
     "paths": {
-      "@boardclimb/catalog-core/testing": ["packages/catalog-core/src/testing/index.ts"],
-      "@boardclimb/bluetooth-core/testing": ["packages/bluetooth-core/src/testing/index.ts"],
-      "@boardclimb/application/testing": ["packages/application/src/testing/index.ts"],
-      "@boardclimb/storage-local/testing": ["packages/storage-local/src/testing/index.ts"],
-      "@boardclimb/*": ["packages/*/src/index.ts"]
+      "@boardclimb/catalog-core/testing": ["./packages/catalog-core/src/testing/index.ts"],
+      "@boardclimb/bluetooth-core/testing": ["./packages/bluetooth-core/src/testing/index.ts"],
+      "@boardclimb/application/testing": ["./packages/application/src/testing/index.ts"],
+      "@boardclimb/storage-local/testing": ["./packages/storage-local/src/testing/index.ts"],
+      "@boardclimb/*": ["./packages/*/src/index.ts"]
     }
   },
-  "include": ["packages/**/*.ts", "tests/**/*.ts", "apps/**/*.ts", "apps/**/*.tsx", "scripts/**/*.ts"],
+  "include": ["./packages/**/*.ts", "tests/**/*.ts", "apps/**/*.ts", "apps/**/*.tsx", "scripts/**/*.ts"],
   "exclude": ["node_modules", "**/dist"]
 }
