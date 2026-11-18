@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   page: { flex: 1 },
   /** What a pull-down reveals above the hero: its own colour, not the page. */
   overscroll: { position: 'absolute', top: 0, left: 0, right: 0, height: '50%' },
-  header: { marginBottom: spacing.md },
+  header: { marginBottom: spacing.md, paddingHorizontal: spacing.lg },
   hero: {
     marginHorizontal: -spacing.lg,
     paddingHorizontal: spacing.xl,
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   search: { flex: 1, minHeight: 50, fontSize: 16 },
-  content: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl + spacing.xl },
+  content: { flexGrow: 1, paddingBottom: spacing.xxl + spacing.xl },
   empty: {
     alignItems: 'center',
     gap: spacing.lg,

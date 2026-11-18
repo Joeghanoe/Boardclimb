@@ -81,19 +81,19 @@ const TILE = 40;
 
 const styles = StyleSheet.create({
   row: {
-    minHeight: 58,
+    minHeight: 60,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.lg,
   },
-  first: { borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg, paddingTop: spacing.sm + 4 },
-  last: {
-    borderBottomLeftRadius: radii.lg,
-    borderBottomRightRadius: radii.lg,
-    paddingBottom: spacing.sm + 4,
+  first: {
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
+    paddingTop: spacing.sm + 4,
   },
+  last: {},
   tile: {
     width: TILE,
     height: TILE,
@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
   go: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   divider: {
     position: 'absolute',
-    left: spacing.md,
-    right: spacing.md,
+    left: spacing.lg,
+    right: spacing.lg,
     bottom: 0,
     height: StyleSheet.hairlineWidth,
   },

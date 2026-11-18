@@ -30,17 +30,18 @@ export class DeviceSnapshotReader implements SnapshotReader {
       this.opening.set(key, opening);
     }
     const db = await opening;
-    this.leases.set(db, (this.leases.get(db) ?? 0) + 1);
+    const active = this.connections.get(key) ?? db;
+    this.leases.set(active, (this.leases.get(active) ?? 0) + 1);
     let released = false;
     return {
       release: async () => {
         if (released) return;
         released = true;
-        this.leases.set(db, (this.leases.get(db) ?? 1) - 1);
-        await this.closeRetired(db);
+        this.leases.set(active, (this.leases.get(active) ?? 1) - 1);
+        await this.closeRetired(active);
       },
       all: <T>(sql: string, params: readonly (string | number | null)[]) =>
-        db.getAllAsync<T>(sql, [...params]),
+        active.getAllAsync<T>(sql, [...params]),
     };
   }
 
@@ -111,6 +112,10 @@ export class DeviceSnapshotReader implements SnapshotReader {
         new File(this.directory, `${filename}.complete`).exists &&
         (await new File(this.directory, `${filename}.complete`).text()) === filename
       ) {
+        const existing = this.connections.get(key);
+        if (existing && this.filenames.get(existing) === filename) {
+          return existing;
+        }
         db = await openDatabaseAsync(filename, { useNewConnection: true }, this.directory.uri);
         await this.publish(key, db, filename);
         return db;
@@ -191,7 +196,8 @@ export class DeviceSnapshotReader implements SnapshotReader {
 
   private async closeRetired(db: SQLiteDatabase): Promise<void> {
     const key = this.retired.get(db);
-    if (!key || (this.leases.get(db) ?? 0) > 0 || this.closing.has(db)) return;
+    if (!key || (this.leases.get(db) ?? 0) > 0 || this.closing.has(db) || this.connections.get(key) === db)
+      return;
     this.closing.add(db);
     await db.closeAsync();
     this.retired.delete(db);

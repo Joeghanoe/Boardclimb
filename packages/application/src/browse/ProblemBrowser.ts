@@ -161,8 +161,9 @@ export class ProblemBrowser {
   async getProblem(configuration: BoardConfiguration, summary: ProblemSummary): Promise<Problem> {
     const cached = await this.options.cache.getDetail(summary.key);
     if (cached) return cached;
+    const manufacturer = summary.manufacturer ?? configuration.manufacturer;
     const problem = await this.options
-      .catalogs(configuration.manufacturer)
+      .catalogs(manufacturer)
       .getProblem(configuration, summary.providerProblemId);
     await this.options.cache.saveDetail(problem);
     return problem;

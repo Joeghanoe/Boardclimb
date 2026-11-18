@@ -7,6 +7,7 @@ import {
   condensedSize,
   AppText,
   BLOCKS,
+  Button,
   GradientBackdrop,
   IconButton,
   Reveal,
@@ -97,19 +98,25 @@ function ProblemDetail({
   const loaded = useRef(new Map<ProblemKey, Problem>());
   const neighbourKeys = neighbours.map((item) => item.key).join('|');
 
+  const [retryCount, setRetryCount] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
     setFailure(null);
     for (const item of [summary, ...neighbours]) {
-      if (loaded.current.has(item.key)) continue;
+      if (loaded.current.has(item.key) && retryCount === 0) continue;
       const current = item.key === summary.key;
       container.browser
         .getProblem(selection.configuration, item)
         .then((result) => {
           loaded.current.set(item.key, result);
-          if (current && !cancelled) setProblem(result);
+          if (current && !cancelled) {
+            setProblem(result);
+            setFailure(null);
+          }
         })
         .catch((error: unknown) => {
+          console.error('[ProblemDetailScreen] Failed to load problem:', item.key, error);
           if (current && !cancelled) setFailure(describeCatalogError(catalogErrorCode(error)));
         });
     }
@@ -118,7 +125,7 @@ function ProblemDetail({
       cancelled = true;
     };
     // neighbourKeys stands in for the neighbours array, which is rebuilt on every render.
-  }, [container, selection, summary, neighbourKeys]);
+  }, [container, selection, summary, neighbourKeys, retryCount]);
 
   useEffect(() => {
     let cancelled = false;
@@ -266,6 +273,7 @@ function ProblemDetail({
               <AppText tone="muted" variant="caption" style={styles.centeredSubtext}>
                 {failure.action}
               </AppText>
+              <Button label="Try again" variant="primary" onPress={() => setRetryCount((c) => c + 1)} />
             </View>
           ) : slow ? (
             <View style={styles.centeredMessage}>
