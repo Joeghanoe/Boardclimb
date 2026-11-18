@@ -21,12 +21,13 @@ interface Outcome {
 const root = join(import.meta.dir, '..');
 const fast = Bun.argv.includes('--fast');
 const bun = process.execPath;
-const tool = (...parts: string[]) => [bun, '--bun', join(root, 'node_modules', ...parts)];
 
+// Bun's built-in formatter, linter and type checker, configured in bunfig.toml and tsconfig.json (ADR-0004).
+// `--no-script` keeps them from running a package.json script of the same name instead.
 const staticSteps: Step[] = [
-  { name: 'format', command: [...tool('prettier', 'bin', 'prettier.cjs'), '--check', '.'] },
-  { name: 'lint', command: [...tool('eslint', 'bin', 'eslint.js'), '.'] },
-  { name: 'types', command: [...tool('typescript', 'bin', 'tsc'), '--noEmit', '-p', 'tsconfig.json'] },
+  { name: 'format', command: [bun, 'fmt', '--check', '--no-script'] },
+  { name: 'lint', command: [bun, 'lint', '--max-warnings', '0', '--no-script'] },
+  { name: 'types', command: [bun, 'check', '--no-script'] },
 ];
 
 const testStep: Step = {
