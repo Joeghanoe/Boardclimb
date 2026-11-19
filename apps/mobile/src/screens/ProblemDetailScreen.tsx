@@ -20,6 +20,7 @@ import {
 import type { BoardGeometry, GradeSystem, Problem, ProblemKey, ProblemSummary } from '@boardclimb/domain';
 import type { AppContainer } from '../composition/AppContainer';
 import { BoardMap } from './BoardMap';
+import { EdgeFade } from './EdgeFade';
 import { ProblemActionBar } from './ProblemActionBar';
 import { ProblemDetailsSheet } from './ProblemDetailsSheet';
 import { catalogErrorCode } from './presentation/catalogErrorCode';
@@ -310,6 +311,10 @@ function ProblemDetail({
 
         {/* 3. Compact bottom action bar: - attempt, Top, Flash, + attempt, Light up */}
         <View style={[styles.sheet, { paddingBottom: Math.max(spacing.sm, insets.bottom - spacing.lg) }]}>
+          {/* The board drawing fades out behind the controls, so they always stand out. */}
+          <View style={styles.sheetFade} pointerEvents="none">
+            <EdgeFade color={colors.background} edge="bottom" />
+          </View>
           <ProblemActionBar
             summary={log.summary}
             logGuidance={log.problem}
@@ -372,6 +377,7 @@ const styles = StyleSheet.create({
   gradeText: { ...displaySize(14), letterSpacing: -0.3 },
   glow: { position: 'absolute', top: 0, left: 0, right: 0, opacity: 0.32 },
   sheet: { paddingTop: spacing.xs },
+  sheetFade: { position: 'absolute', left: 0, right: 0, bottom: '100%', height: 56 },
   canvasContainer: {
     flex: 1,
     width: '100%',

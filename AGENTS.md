@@ -51,6 +51,7 @@ Packages are `@boardclimb/<folder-name>`. Test files sit beside their source as 
 - Append-only event log with derived totals and set-style toggles: no stored totals, no flip commands. ADR: `docs/adr/ADR-0003-local-persistence-and-log-derivation.md`
 - Native composition uses public BoardSesh snapshot sources and reference-derived BLE protocols for all three boards (ADR-0005); physical compatibility is still unverified. Sample mode remains explicit on web. Constructors without a source/encoder still return `provider_unverified` or `protocol_unverified` instead of guessing. ADR: `docs/adr/ADR-0002-react-native-architecture-and-integrations-updated.md`
 - Only `lightUp` sends an LED command, from a Light up tap or from `showing` while light on swipe is on; connection, reconnection, resume and browsing with it off never do. ADR: `docs/adr/ADR-0001-product-experience-and-logging-updated.md`
+- One gym map for all three manufacturers from a pinned public-domain listing (`scripts/pin-gyms.ts`), drawn with `react-native-maps`; asks for location when the map opens and starts around the climber; Climb opens the board screen and scans; the climber still picks the controller. ADR: `docs/adr/ADR-0007-combined-gym-map.md`
 - Bun workspaces and `bun test`, TypeScript strict, Expo with a development client (Expo and Metro run on Node; everything else on Bun, hoisted linker). ADR: `docs/adr/ADR-0004-toolchain-and-test-strategy.md`
 
 ## Pitfalls

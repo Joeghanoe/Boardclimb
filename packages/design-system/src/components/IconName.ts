@@ -16,4 +16,8 @@ export type IconName =
   | 'arrowUpRight'
   | 'star'
   | 'pulse'
-  | 'reset';
+  | 'reset'
+  | 'pin'
+  | 'locate'
+  | 'select'
+  | 'climb';

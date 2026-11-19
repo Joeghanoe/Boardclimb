@@ -10,7 +10,6 @@ import type {
 } from '@boardclimb/application';
 import {
   AppText,
-  BLOCKS,
   Button,
   Icon,
   IconButton,
@@ -23,18 +22,20 @@ import {
 import { MANUFACTURERS } from '@boardclimb/domain';
 import type { AppContainer } from '../composition/AppContainer';
 import { BoardPicker } from './BoardPicker';
+import { ManufacturerMark } from './ManufacturerMark';
 import { ScanPulse } from './ScanPulse';
 import { ConfigurationSheet } from './ConfigurationSheet';
 import { ModeBanner } from './ModeBanner';
 import { describeBoardError } from './presentation/describeBoardError';
 import { describeConfiguration } from './presentation/describeConfiguration';
 import { describeManufacturer } from './presentation/describeManufacturer';
-import { manufacturerBlocks } from './presentation/manufacturerBlocks';
 import { useBoardSnapshot } from './useBoardSnapshot';
 
 interface BoardScreenProps {
   container: AppContainer;
   selection: BoardSelection | null;
+  /** The gym the climber came from on the map, shown in the top bar. */
+  gymName?: string;
   onBack: () => void;
   onOpenDiagnostics: () => void;
   onChooseLayout: () => void;
@@ -55,6 +56,7 @@ type Scan =
 export function BoardScreen({
   container,
   selection,
+  gymName,
   onBack,
   onOpenDiagnostics,
   onChooseLayout,
@@ -164,6 +166,7 @@ export function BoardScreen({
               Connected
             </AppText>
           </View>
+          <ManufacturerMark manufacturer={snapshot.board.manufacturer} size={56} />
           <AppText variant="display" numberOfLines={2}>
             {snapshot.board.name ?? describeManufacturer(snapshot.board.manufacturer)}
           </AppText>
@@ -298,12 +301,7 @@ export function BoardScreen({
                   pressed && { backgroundColor: colors.surfaceMuted },
                 ]}
               >
-                <View
-                  style={[
-                    styles.swatch,
-                    { backgroundColor: BLOCKS[manufacturerBlocks(board.manufacturer).from].bg },
-                  ]}
-                />
+                <ManufacturerMark manufacturer={board.manufacturer} size={32} />
                 <View style={styles.rowText}>
                   <AppText variant="bodyStrong" numberOfLines={1}>
                     {boardLabel(board)}
@@ -344,6 +342,11 @@ export function BoardScreen({
     >
       <View style={styles.bar}>
         <IconButton icon="back" label="Back" onPress={onBack} />
+        {gymName ? (
+          <AppText variant="eyebrow" tone="muted" numberOfLines={1} style={styles.gym}>
+            {gymName}
+          </AppText>
+        ) : null}
         <IconButton
           icon="pulse"
           label="Diagnostics"
@@ -376,6 +379,7 @@ export function BoardScreen({
 
 const styles = StyleSheet.create({
   page: { flex: 1 },
+  gym: { flex: 1, textAlign: 'center' },
   bar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -417,7 +421,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
   },
   rowText: { flex: 1, minWidth: 0 },
-  swatch: { width: 12, height: 34, borderRadius: 4 },
   manual: { gap: spacing.sm, marginTop: spacing.lg },
   pressed: { opacity: 0.7 },
 });

@@ -3,6 +3,7 @@ import type {
   BoardSession,
   ClimbingLog,
   Clock,
+  GymFinder,
   ProblemBrowser,
   RingDiagnosticsSink,
   SettingsStore,
@@ -15,6 +16,8 @@ export interface AppContainer {
   log: ClimbingLog;
   browser: ProblemBrowser;
   directory: BoardDirectory;
+  /** The combined gym map across all three manufacturers. */
+  gyms: GymFinder;
   session: BoardSession;
   settings: SettingsStore;
   diagnostics: RingDiagnosticsSink;

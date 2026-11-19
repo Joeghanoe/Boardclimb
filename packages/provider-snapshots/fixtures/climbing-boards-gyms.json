@@ -1,0 +1,279 @@
+{
+  "source": "@hangtime/climbing-boards@1.0.146 (subset; wall serial numbers removed)",
+  "kilter": [
+    {
+      "type": "Feature",
+      "id": "178567",
+      "properties": {
+        "id": "178567",
+        "gym_uuid": "178567",
+        "name": "Boulderhal Energiehaven Utrecht",
+        "address": "Elektronweg",
+        "city": "Utrecht",
+        "country": "NL",
+        "countryCode": null,
+        "postal_code": "3542 AC",
+        "latitude": 52.10039,
+        "longitude": 5.07082,
+        "gym_logo": null,
+        "banner_logo": null,
+        "instagram_username": null,
+        "is_listed": null,
+        "walls": [
+          {
+            "id": "4b9f3c43-6dce-4aca-84c0-f21c8a48bcae",
+            "wall_uuid": "4b9f3c43-6dce-4aca-84c0-f21c8a48bcae",
+            "gym_uuid": "178567",
+            "name": "Kilter Board 30",
+            "product_name": "Kilter Board Original",
+            "product_layout_uuid": "10",
+            "is_adjustable": 0,
+            "min_angle": null,
+            "max_angle": null,
+            "angle_increments": null,
+            "angle": 30,
+            "serial_number": null,
+            "accumulated_hold_set_value": 3,
+            "is_listed": 1,
+            "created_at": "2022-09-13 20:48:34.619809Z"
+          },
+          {
+            "id": "d1ede6fb-6aa9-4be9-bfea-7b5a3932661f",
+            "wall_uuid": "d1ede6fb-6aa9-4be9-bfea-7b5a3932661f",
+            "gym_uuid": "178567",
+            "name": "Kilter Board 50",
+            "product_name": "Kilter Board Original",
+            "product_layout_uuid": "10",
+            "is_adjustable": 0,
+            "min_angle": null,
+            "max_angle": null,
+            "angle_increments": null,
+            "angle": 50,
+            "serial_number": null,
+            "accumulated_hold_set_value": 3,
+            "is_listed": 1,
+            "created_at": "2022-09-13 20:48:34.619809Z"
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [5.07082, 52.10039]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "160190",
+      "properties": {
+        "id": "160190",
+        "gym_uuid": "160190",
+        "name": "Boulderhal Zuidhaven",
+        "address": "Vrieslantlaan 2",
+        "city": "Utrecht",
+        "country": "NL",
+        "countryCode": null,
+        "postal_code": "3526 AA",
+        "latitude": 52.0651,
+        "longitude": 5.10472,
+        "gym_logo": null,
+        "banner_logo": null,
+        "instagram_username": null,
+        "is_listed": null,
+        "walls": [
+          {
+            "id": "4337af53-608e-4fde-b53f-b8d0b9226ba7",
+            "wall_uuid": "4337af53-608e-4fde-b53f-b8d0b9226ba7",
+            "gym_uuid": "160190",
+            "name": "Kilter Board",
+            "product_name": "Kilter Board Original",
+            "product_layout_uuid": "10",
+            "is_adjustable": 0,
+            "min_angle": null,
+            "max_angle": null,
+            "angle_increments": null,
+            "angle": 40,
+            "serial_number": null,
+            "accumulated_hold_set_value": 3,
+            "is_listed": 1,
+            "created_at": "2022-07-15 20:23:27.086858Z"
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [5.10472, 52.0651]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "fdf19bb7-81d8-49ff-a2dc-b8ad223464f2",
+      "properties": {
+        "id": "fdf19bb7-81d8-49ff-a2dc-b8ad223464f2",
+        "gym_uuid": "fdf19bb7-81d8-49ff-a2dc-b8ad223464f2",
+        "name": "\"九星龙国际攀岩（万象店） Jiuxinglong Climbing Gym (Mixc）\"",
+        "address": "N.139 Mixc F1 wan xiang tian di , 369 guangji na Road",
+        "city": "Gusu District, Suzhou City",
+        "country": "CN",
+        "countryCode": null,
+        "postal_code": null,
+        "latitude": 31.298881516800712,
+        "longitude": 120.58426845767148,
+        "gym_logo": null,
+        "banner_logo": null,
+        "instagram_username": null,
+        "is_listed": null,
+        "walls": [
+          {
+            "id": "9ba597a7-d4da-4b02-8352-dc04d79f4348",
+            "wall_uuid": "9ba597a7-d4da-4b02-8352-dc04d79f4348",
+            "gym_uuid": "fdf19bb7-81d8-49ff-a2dc-b8ad223464f2",
+            "name": "OG Kilter Board 角度调节范围",
+            "product_name": "Kilter Board Original",
+            "product_layout_uuid": "10",
+            "is_adjustable": 1,
+            "min_angle": null,
+            "max_angle": 70,
+            "angle_increments": 5,
+            "angle": 40,
+            "serial_number": null,
+            "accumulated_hold_set_value": 3,
+            "is_listed": 1,
+            "created_at": "2026-06-09 03:22:08.525734Z"
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [120.58426845767148, 31.298881516800712]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "158309",
+      "properties": {
+        "id": "158309",
+        "gym_uuid": "158309",
+        "name": "Apex Boulders",
+        "address": "Atoomweg 19",
+        "city": "Groningen",
+        "country": "NL",
+        "countryCode": null,
+        "postal_code": "9743 AJ",
+        "latitude": 53.21729,
+        "longitude": 6.53861,
+        "gym_logo": null,
+        "banner_logo": null,
+        "instagram_username": null,
+        "is_listed": null,
+        "walls": [
+          {
+            "id": "31a94d7f-aa4f-4306-a1e2-7693dccec323",
+            "wall_uuid": "31a94d7f-aa4f-4306-a1e2-7693dccec323",
+            "gym_uuid": "158309",
+            "name": "Kilter Board",
+            "product_name": "Kilter Board Original",
+            "product_layout_uuid": "10",
+            "is_adjustable": 0,
+            "min_angle": null,
+            "max_angle": null,
+            "angle_increments": null,
+            "angle": 40,
+            "serial_number": null,
+            "accumulated_hold_set_value": 3,
+            "is_listed": 1,
+            "created_at": "2022-07-08 23:53:18.428594Z"
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [6.53861, 53.21729]
+      }
+    }
+  ],
+  "tension": [
+    {
+      "type": "Feature",
+      "id": 4084,
+      "properties": {
+        "id": 4084,
+        "username": "bouldergarten",
+        "name": "Bouldergarten GmbH",
+        "latitude": 52.47997,
+        "longitude": 13.45145
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [13.45145, 52.47997]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 305925,
+      "properties": {
+        "id": 305925,
+        "username": "apexboulders",
+        "name": "Apex Boulders",
+        "latitude": 53.217184,
+        "longitude": 6.538608
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [6.538608, 53.217184]
+      }
+    }
+  ],
+  "moonboard": [
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "The School Room",
+        "Description": "The original MoonBoard in the legendary School Room. \r\n\r\nThe School Room, Sheffi",
+        "Image": "/Content/Account/Users/MoonBoards/SchoolRoom.jpg",
+        "Latitude": 53.386304,
+        "Longitude": -1.47619,
+        "IsCommercial": true,
+        "IsLed": true,
+        "LatLng": [53.386304, -1.47619]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-1.47619, 53.386304]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Craggy Island Moonboard",
+        "Description": "This Moonboard is located inside Craggy Island Guildford and offers a selection ",
+        "Image": "/Content/Account/Users/MoonBoards/Craggy_Island_Moonboard_hiRes.jpg",
+        "Latitude": 51.23622,
+        "Longitude": -0.570409,
+        "IsCommercial": true,
+        "IsLed": false,
+        "LatLng": [51.23622, -0.570409]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-0.570409, 51.23622]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Home board",
+        "Description": "",
+        "Image": null,
+        "Latitude": 51.0,
+        "Longitude": 4.0,
+        "IsCommercial": false,
+        "IsLed": false,
+        "LatLng": [51.0, 4.0]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.0, 51.0]
+      }
+    }
+  ]
+}

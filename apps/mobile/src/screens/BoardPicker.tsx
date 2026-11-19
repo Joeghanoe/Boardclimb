@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { BoardSelection } from '@boardclimb/application';
 import { AppText, BLOCKS, Icon, radii, spacing, touchTarget, useTheme } from '@boardclimb/design-system';
+import { ManufacturerMark } from './ManufacturerMark';
 import { describeLayoutDetail } from './presentation/describeLayoutDetail';
 import { manufacturerBlocks } from './presentation/manufacturerBlocks';
 
@@ -25,7 +26,11 @@ export function BoardPicker({ selection, onPress }: BoardPickerProps) {
       onPress={onPress}
       style={({ pressed }) => [styles.row, { backgroundColor: colors.surface }, pressed && styles.pressed]}
     >
-      <View style={[styles.swatch, { backgroundColor: BLOCKS[blocks.from].bg }]} />
+      {selection ? (
+        <ManufacturerMark manufacturer={selection.configuration.manufacturer} size={34} />
+      ) : (
+        <View style={[styles.swatch, { backgroundColor: BLOCKS[blocks.from].bg }]} />
+      )}
       <View style={styles.text}>
         <AppText variant="bodyStrong" numberOfLines={1}>
           {selection ? selection.boardName : 'Choose board'}
@@ -51,7 +56,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radii.lg,
   },
-  swatch: { width: 12, height: 34, borderRadius: 4 },
+  swatch: { width: 34, height: 34, borderRadius: 10 },
   text: { flex: 1, minWidth: 0 },
   pressed: { opacity: 0.7 },
 });

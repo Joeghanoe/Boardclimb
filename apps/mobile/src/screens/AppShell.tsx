@@ -6,12 +6,18 @@ import type { AppContainer } from '../composition/AppContainer';
 import { BoardScreen } from './BoardScreen';
 import type { BrowsedList } from './BrowsedList';
 import { DiagnosticsScreen } from './DiagnosticsScreen';
+import type { GymMapFocus } from './GymMapFocus';
+import { GymMapScreen } from './GymMapScreen';
 import { LayoutScreen } from './LayoutScreen';
 import { ProblemDetailScreen } from './ProblemDetailScreen';
 import { ProblemListScreen } from './ProblemListScreen';
 import { useBrowseSettings } from './useBrowseSettings';
 import { useNavigationStack } from './useNavigationStack';
 import { useResumeOnForeground } from './useResumeOnForeground';
+import { selectionForPreset } from './presentation/selectionForPreset';
+
+/** Where the gym map waits while it asks for location, and stays if location is refused: western Europe. */
+const GYM_MAP_START: GymMapFocus = { point: { latitude: 50.5, longitude: 6 }, span: 12 };
 
 interface AppShellProps {
   container: AppContainer;
@@ -28,6 +34,8 @@ export function AppShell({ container }: AppShellProps) {
   /** Next was tapped at the end of what is loaded: step as soon as more arrive. */
   const [waitingAfter, setWaitingAfter] = useState<string | null>(null);
   const [stepDirection, setStepDirection] = useState<1 | -1>(1);
+  /** Where the gym map was left, so it reopens there during this app session. */
+  const [gymMap, setGymMap] = useState<GymMapFocus>(GYM_MAP_START);
   const browse = useBrowseSettings(container.settings);
   const navigation = useNavigationStack({ name: 'problems' });
   useResumeOnForeground(container.session);
@@ -121,10 +129,31 @@ export function AppShell({ container }: AppShellProps) {
           <LayoutScreen
             container={container}
             current={browse.selection}
+            {...(route.preset ? { preset: route.preset } : {})}
             onBack={navigation.pop}
             onChoose={(selection) => {
               browse.chooseSelection(selection);
-              navigation.pop();
+              // From a gym on the map, the climber lands on the problems, not back on the map.
+              if (route.preset) navigation.popToRoot();
+              else navigation.pop();
+            }}
+          />
+        );
+      case 'gyms':
+        return (
+          <GymMapScreen
+            gyms={container.gyms}
+            initial={gymMap}
+            onLeave={setGymMap}
+            startAtUser={gymMap === GYM_MAP_START}
+            onBack={navigation.pop}
+            onClimb={(preset) => {
+              // Climb starts on the board screen, which scans straight away; the climber picks the controller.
+              void container.directory
+                .list()
+                .then((entries) => selectionForPreset(entries, preset, browse.selection))
+                .catch(() => browse.selection)
+                .then((selection) => navigation.push({ name: 'board', selection, preset }));
             }}
           />
         );
@@ -133,8 +162,11 @@ export function AppShell({ container }: AppShellProps) {
           <BoardScreen
             container={container}
             selection={route.selection}
+            {...(route.preset ? { gymName: route.preset.gymName } : {})}
             onBack={navigation.pop}
-            onChooseLayout={() => navigation.replace({ name: 'layout' })}
+            onChooseLayout={() =>
+              navigation.replace(route.preset ? { name: 'layout', preset: route.preset } : { name: 'layout' })
+            }
             onUseLayout={(selection) => {
               browse.chooseSelection(selection);
             }}
@@ -176,6 +208,7 @@ export function AppShell({ container }: AppShellProps) {
             onListChange={reportList}
             onChooseLayout={() => navigation.push({ name: 'layout' })}
             onOpenBoard={openBoard}
+            onOpenGyms={() => navigation.push({ name: 'gyms' })}
           />
         </Reveal>
       </View>

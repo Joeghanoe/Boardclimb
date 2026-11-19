@@ -34,3 +34,9 @@ export * from './log/planAchievementChange';
 export * from './log/planAttemptChange';
 export * from './log/sessionDateFor';
 export * from './log/summarizeLog';
+
+export * from './gym/GeoPoint';
+export * from './gym/Gym';
+export * from './gym/GymBoard';
+export * from './gym/distanceKm';
+export * from './gym/gymManufacturers';

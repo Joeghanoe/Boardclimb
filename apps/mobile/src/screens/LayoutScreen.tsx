@@ -16,6 +16,7 @@ import { AngleStrip } from './AngleStrip';
 import { ModeBanner } from './ModeBanner';
 import { PickerPill } from './PickerPill';
 import { ScreenFrame } from './ScreenFrame';
+import type { LayoutPreset } from './presentation/LayoutPreset';
 import { describeCatalogError } from './presentation/describeCatalogError';
 import { describeManufacturer } from './presentation/describeManufacturer';
 import { groupConfigurations } from './presentation/groupConfigurations';
@@ -25,6 +26,8 @@ import { DEFAULT_ANGLE, pickConfiguration } from './presentation/pickConfigurati
 interface LayoutScreenProps {
   container: AppContainer;
   current: BoardSelection | null;
+  /** Opened from a gym on the map: start on that gym's manufacturer, board and angle. */
+  preset?: LayoutPreset;
   onChoose: (selection: BoardSelection) => void;
   onBack: () => void;
 }
@@ -35,15 +38,19 @@ interface LayoutScreenProps {
  * Choosing a board model only configures the catalog and never selects a physical controller (FR-001, FR-003, FR-004).
  * One manufacturer failing never hides the others.
  */
-export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScreenProps) {
+export function LayoutScreen({ container, current, preset, onChoose, onBack }: LayoutScreenProps) {
   const { colors } = useTheme();
   const [entries, setEntries] = useState<DirectoryEntry[] | null>(null);
   const [manufacturer, setManufacturer] = useState<Manufacturer | null>(
-    current?.configuration.manufacturer ?? null,
+    preset?.manufacturer ?? current?.configuration.manufacturer ?? null,
   );
-  const [boardId, setBoardId] = useState<string | null>(current?.configuration.boardId ?? null);
+  const [boardId, setBoardId] = useState<string | null>(
+    preset ? null : (current?.configuration.boardId ?? null),
+  );
   const [groupKey, setGroupKey] = useState<string | null>(null);
-  const [angle, setAngle] = useState<number | null>(current?.configuration.angleDegrees ?? DEFAULT_ANGLE);
+  const [angle, setAngle] = useState<number | null>(
+    preset?.angleDegrees ?? current?.configuration.angleDegrees ?? DEFAULT_ANGLE,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +65,10 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
   const entry = entries?.find((item) => item.manufacturer === manufacturer) ?? entries?.[0];
   const active: Manufacturer = entry?.manufacturer ?? manufacturer ?? 'kilter';
   const boards = entry?.ok ? entry.boards : [];
-  const board = boards.find((item) => item.board.id === boardId) ?? boards[0];
+  const board =
+    boards.find((item) => item.board.id === boardId) ??
+    boards.find((item) => item.board.name === preset?.boardName && item.board.manufacturer === active) ??
+    boards[0];
   const groups = useMemo(() => groupConfigurations(board?.configurations ?? []), [board]);
   const group =
     groups.find((item) => item.key === groupKey) ??
@@ -75,7 +85,7 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
   return (
     <ScreenFrame
       title="Choose your board"
-      eyebrow="Board layout"
+      eyebrow={preset?.gymName ?? 'Board layout'}
       titleVariant="title"
       onBack={onBack}
       backdrop={
@@ -106,6 +116,7 @@ export function LayoutScreen({ container, current, onChoose, onBack }: LayoutScr
                   <PickerPill
                     key={item.manufacturer}
                     label={describeManufacturer(item.manufacturer)}
+                    manufacturer={item.manufacturer}
                     selected={item.manufacturer === active}
                     block={manufacturerBlocks(item.manufacturer).from}
                     onPress={() => {

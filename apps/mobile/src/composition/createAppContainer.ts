@@ -2,15 +2,17 @@ import {
   BoardDirectory,
   BoardSession,
   ClimbingLog,
+  GymFinder,
   InMemoryLogStore,
   InMemorySettingsStore,
   ProblemBrowser,
   RingDiagnosticsSink,
 } from '@boardclimb/application';
-import type { Clock, IdGenerator, LogStore, SettingsStore } from '@boardclimb/application';
+import type { Clock, GymSource, IdGenerator, LogStore, SettingsStore } from '@boardclimb/application';
 import type { BleTransport } from '@boardclimb/bluetooth-core';
 import { InMemoryProblemCache } from '@boardclimb/catalog-core';
 import type { ProviderSource, ProblemCache } from '@boardclimb/catalog-core';
+import { PinnedGymSource } from '@boardclimb/provider-snapshots';
 import { SqlLogStore, SqlProblemCache, SqlSettingsStore, migrate } from '@boardclimb/storage-local';
 import type { SqlDatabase } from '@boardclimb/storage-local';
 import type { Manufacturer } from '@boardclimb/domain';
@@ -28,6 +30,8 @@ export interface AppContainerDependencies {
   sources?: Record<Manufacturer, ProviderSource>;
   diagnostics?: RingDiagnosticsSink;
   pageSize?: number;
+  /** The combined gym list; the pinned public list unless a test supplies its own. */
+  gyms?: GymSource;
 }
 
 /**
@@ -67,6 +71,7 @@ export async function createAppContainer(dependencies: AppContainerDependencies)
       ...(dependencies.pageSize === undefined ? {} : { pageSize: dependencies.pageSize }),
     }),
     directory: new BoardDirectory(catalogs),
+    gyms: new GymFinder(dependencies.gyms ?? new PinnedGymSource()),
     session: new BoardSession(controllers, clock, diagnostics),
     settings,
     diagnostics,

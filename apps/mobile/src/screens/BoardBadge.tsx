@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet } from 'react-native';
 import type { BoardSelection } from '@boardclimb/application';
-import { AppText, BLOCKS, touchTarget } from '@boardclimb/design-system';
+import { BLOCKS, Icon, touchTarget } from '@boardclimb/design-system';
 import { describeLayoutDetail } from './presentation/describeLayoutDetail';
-import { describeManufacturer } from './presentation/describeManufacturer';
+import { ManufacturerMark } from './ManufacturerMark';
 import { manufacturerBlocks } from './presentation/manufacturerBlocks';
 
 interface BoardBadgeProps {
@@ -10,11 +10,10 @@ interface BoardBadgeProps {
   onPress: () => void;
 }
 
-/** Which board the list is for, at a glance: the board's own colour and initial (K, M, T). Opens the layout choice. */
+/** Which board the list is for, at a glance: the board's mark (K, M, T). Opens the layout choice. */
 export function BoardBadge({ selection, onPress }: BoardBadgeProps) {
   const manufacturer = selection?.configuration.manufacturer ?? null;
   const block = BLOCKS[manufacturerBlocks(manufacturer).from];
-  const name = manufacturer ? describeManufacturer(manufacturer) : null;
   return (
     <Pressable
       accessibilityRole="button"
@@ -26,9 +25,11 @@ export function BoardBadge({ selection, onPress }: BoardBadgeProps) {
       onPress={onPress}
       style={({ pressed }) => [styles.badge, { backgroundColor: block.bg }, pressed && styles.pressed]}
     >
-      <AppText variant="title" style={[styles.letter, { color: block.on }]}>
-        {name ? name.charAt(0) : '?'}
-      </AppText>
+      {manufacturer ? (
+        <ManufacturerMark manufacturer={manufacturer} size={touchTarget} />
+      ) : (
+        <Icon name="select" color={block.on} size={22} weight={2.4} />
+      )}
     </Pressable>
   );
 }
@@ -37,10 +38,10 @@ const styles = StyleSheet.create({
   badge: {
     width: touchTarget,
     height: touchTarget,
-    borderRadius: 14,
+    borderRadius: touchTarget * 0.3,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  letter: { fontSize: 20, lineHeight: 24 },
   pressed: { opacity: 0.75 },
 });
