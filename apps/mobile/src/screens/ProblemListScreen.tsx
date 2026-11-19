@@ -8,6 +8,7 @@ import {
   Button,
   GradientBackdrop,
   Icon,
+  IconButton,
   Notice,
   radii,
   spacing,
@@ -23,6 +24,7 @@ import { FilterBar } from './FilterBar';
 import { ModeBanner } from './ModeBanner';
 import type { BrowsedList } from './BrowsedList';
 import { ProblemRow } from './ProblemRow';
+import { StartTile } from './StartTile';
 import { describeCatalogError } from './presentation/describeCatalogError';
 import { describeManufacturer } from './presentation/describeManufacturer';
 import { isOfflineWithoutBoardList } from './presentation/isOfflineWithoutBoardList';
@@ -30,6 +32,13 @@ import { manufacturerBlocks } from './presentation/manufacturerBlocks';
 import { useBoardSnapshot } from './useBoardSnapshot';
 import { useConfigurationLabels } from './useConfigurationLabels';
 import { useProblemList } from './useProblemList';
+
+/** What the app is for, in the order a climber does it. */
+const START_STEPS = [
+  'Find the board at your gym',
+  'Stand at the wall and connect',
+  'Pick a problem, tap Light up and log your send',
+];
 
 interface ProblemListScreenProps {
   container: AppContainer;
@@ -46,6 +55,7 @@ interface ProblemListScreenProps {
   onListChange: (list: BrowsedList) => void;
   onChooseLayout: () => void;
   onOpenBoard: () => void;
+  onOpenGyms: () => void;
 }
 
 /** Browsing: cached problems first, refreshed in the background. Opening or filtering never touches the board (FR-008). */
@@ -63,6 +73,7 @@ export function ProblemListScreen({
   onListChange,
   onChooseLayout,
   onOpenBoard,
+  onOpenGyms,
 }: ProblemListScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -111,7 +122,10 @@ export function ProblemListScreen({
               surface="glass"
             />
           </View>
-          <ConnectionChip snapshot={snapshot} onPress={onOpenBoard} surface="glass" compact />
+          <View style={styles.barEnd}>
+            <IconButton icon="pin" label="Gym map" variant="glass" onPress={onOpenGyms} />
+            <ConnectionChip snapshot={snapshot} onPress={onOpenBoard} surface="glass" compact />
+          </View>
         </View>
       </View>
 
@@ -177,11 +191,25 @@ export function ProblemListScreen({
     }
     if (!selection && !search && !filtered) {
       return (
-        <View style={styles.empty}>
-          <AppText variant="title" style={styles.centered}>
-            Choose your board
+        // First run: nothing chosen yet, so say in three steps what the app is for.
+        <View style={[styles.empty, styles.start]}>
+          <AppText variant="title" style={styles.centered} accessibilityRole="header">
+            Light up your board
           </AppText>
-          <Button label="Find my board" variant="primary" large onPress={onOpenBoard} />
+          <View style={styles.steps}>
+            {START_STEPS.map((step, index) => (
+              <View key={step} style={styles.step}>
+                <View style={[styles.stepNumber, { backgroundColor: colors.surface }]}>
+                  <AppText variant="label">{index + 1}</AppText>
+                </View>
+                <AppText style={styles.stepText}>{step}</AppText>
+              </View>
+            ))}
+          </View>
+          <View style={styles.tiles}>
+            <StartTile label="Search for board" icon="board" primary onPress={onOpenBoard} />
+            <StartTile label="Find my gym" icon="pin" onPress={onOpenGyms} />
+          </View>
         </View>
       );
     }
@@ -306,6 +334,7 @@ const styles = StyleSheet.create({
     marginBottom: -spacing.lg,
   },
   bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  barEnd: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   barStart: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
   searchBox: {
     minHeight: touchTarget,
@@ -324,5 +353,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   centered: { textAlign: 'center' },
+  start: { alignItems: 'stretch', width: '100%', maxWidth: 480, alignSelf: 'center' },
+  steps: { gap: spacing.md },
+  step: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  stepNumber: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  stepText: { flex: 1 },
+  tiles: { flexDirection: 'row', gap: spacing.md },
   footer: { height: 72, alignItems: 'center', justifyContent: 'center' },
 });

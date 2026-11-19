@@ -12,6 +12,8 @@ export function useNavigationStack(initial: Route) {
   );
   /** Swaps the current screen, for moving between neighbouring problems without growing the back stack. */
   const replace = useCallback((route: Route) => setStack((current) => [...current.slice(0, -1), route]), []);
+  /** Back to the first screen, for a flow that ends on the problem list wherever it started. */
+  const popToRoot = useCallback(() => setStack((current) => current.slice(0, 1)), []);
   const depth = stack.length;
 
   useEffect(() => {
@@ -23,5 +25,5 @@ export function useNavigationStack(initial: Route) {
     return () => subscription.remove();
   }, [depth, pop]);
 
-  return { route: stack[depth - 1] ?? initial, depth, push, pop, replace };
+  return { route: stack[depth - 1] ?? initial, depth, push, pop, popToRoot, replace };
 }

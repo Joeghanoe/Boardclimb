@@ -15,6 +15,12 @@
           "isBackgroundEnabled": true,
           "bluetoothAlwaysPermission": "BoardClimb uses Bluetooth to find and light the climbing board you choose."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "BoardClimb shows the climbing gyms around you on the gym map."
+        }
       ]
     ],
     "web": {
@@ -31,7 +37,8 @@
       }
     },
     "android": {
-      "package": "com.boardclimb.app"
+      "package": "com.boardclimb.app",
+      "permissions": ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"]
     }
   }
 }

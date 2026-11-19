@@ -139,7 +139,7 @@ export function ProblemActionBar({
         <IconButton
           icon="minus"
           label={`Remove attempt, ${summary?.sessionAttempts ?? 0} today`}
-          variant="ghost"
+          variant="raised"
           size={SIZE}
           disabled={minusDisabled}
           onPress={() => onAdjustAttempts(-1)}
@@ -147,7 +147,7 @@ export function ProblemActionBar({
         <IconButton
           icon="plus"
           label={`Add attempt, ${summary?.sessionAttempts ?? 0} today`}
-          variant="ghost"
+          variant="raised"
           size={SIZE}
           disabled={!ready}
           onPress={onAddAttempt}
@@ -158,7 +158,7 @@ export function ProblemActionBar({
           size={SIZE}
           checked={flash}
           disabled={!ready}
-          variant={flash ? 'solid' : 'ghost'}
+          variant={flash ? 'solid' : 'raised'}
           fill={colors.accent}
           onFill={colors.onAccent}
           onPress={() => void handlePressFlash()}
@@ -169,7 +169,7 @@ export function ProblemActionBar({
           size={SIZE}
           checked={top}
           disabled={!ready}
-          variant={top ? 'solid' : 'ghost'}
+          variant={top ? 'solid' : 'raised'}
           fill={colors.success}
           onFill={colors.onSuccess}
           onPress={() => {
@@ -183,7 +183,7 @@ export function ProblemActionBar({
             label="Flip"
             size={SIZE}
             checked={flip.on}
-            variant={flip.on ? 'solid' : 'ghost'}
+            variant={flip.on ? 'solid' : 'raised'}
             fill={colors.primary}
             onFill={colors.onPrimary}
             accessibilityHint="Shows and lights the problem mirrored left to right"
