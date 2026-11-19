@@ -85,7 +85,7 @@ Full layout and reasoning: ADR-0003. Summary:
 
 - **Browse path.** Screen asks `browseProblems(config, filters, pageCursor)`. `CachedCatalogReader` returns the cached page at once from `problems` (SQL, keyset-paged, filtered in SQL on the stored `difficulty` and `rating` columns), then calls the provider in the background; fetched pages are upserted. Refresh only inserts or updates rows; it never deletes a problem or touches `log_events`.
 - **Log path.** A log action becomes one or more immutable rows in `log_events`, inserted in one transaction with a client-generated unique id (re-sending the same id is a no-op).
-- **Light path.** `lightUp` reads the (cached) problem detail, calls `BoardController.lightUp`, and records the outcome on the in-memory `CommandStatus`. Nothing else in the codebase calls `lightUp`; a test with a recording controller asserts zero calls from every browse and log use case, and one from an explicit Light up (AC-1, FR-008).
+- **Light path.** `lightUp` reads the (cached) problem detail, calls `BoardController.lightUp`, and records the outcome on the in-memory `CommandStatus`. The only other caller is `BoardSession.showing`, which the problem screen calls after the climber stays on a problem for 350 ms; it sends only when light on swipe is on (an in-memory flag on the session, off after disconnect or connect), the link is up and this phone has not already sent that problem (FR-008a). A test with a recording controller asserts zero sends from every browse and log use case and with light on swipe off, one from an explicit Light up, and one per settled problem with it on (AC-1, AC-020, FR-008).
 
 Stored (SQLite, file `boardclimb.db`, `meta.schema_version` fixed at 1 before the first write):
 

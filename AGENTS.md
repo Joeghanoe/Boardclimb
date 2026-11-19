@@ -14,7 +14,7 @@ Product behaviour is `docs/adr/ADR-0001-*.md` (normative, requirement IDs FR, NF
 - **Controller**: the nearby physical BLE device that drives the LEDs. The climber picks it; the app never auto-selects it.
 - **Problem key**: manufacturer, configuration id and provider problem id as one stable string. Logs store only this.
 - **Manual attempts**: attempts the climber added; **success contribution**: the one attempt that Top or Flash adds; **attempts** = manual + success.
-- **Session**: one local calendar day. **Light up**: the only action that may send an LED command.
+- **Session**: one local calendar day. **Light up**: the explicit action that sends an LED command. **Light on swipe**: an opt-in, per-connection switch that lights the problem the climber settles on (FR-008a).
 - **Sample source / scripted transport**: labelled stand-ins used until vendor access is verified. They are never presented as real hardware or real catalogs.
 
 ## Layout
@@ -50,7 +50,7 @@ Packages are `@boardclimb/<folder-name>`. Test files sit beside their source as 
 
 - Append-only event log with derived totals and set-style toggles: no stored totals, no flip commands. ADR: `docs/adr/ADR-0003-local-persistence-and-log-derivation.md`
 - Native composition uses public BoardSesh snapshot sources and reference-derived BLE protocols for all three boards (ADR-0005); physical compatibility is still unverified. Sample mode remains explicit on web. Constructors without a source/encoder still return `provider_unverified` or `protocol_unverified` instead of guessing. ADR: `docs/adr/ADR-0002-react-native-architecture-and-integrations-updated.md`
-- Only `lightUp` sends an LED command; connection, reconnection, resume and browsing never do. ADR: `docs/adr/ADR-0001-product-experience-and-logging-updated.md`
+- Only `lightUp` sends an LED command, from a Light up tap or from `showing` while light on swipe is on; connection, reconnection, resume and browsing with it off never do. ADR: `docs/adr/ADR-0001-product-experience-and-logging-updated.md`
 - Bun workspaces and `bun test`, TypeScript strict, Expo with a development client (Expo and Metro run on Node; everything else on Bun, hoisted linker). ADR: `docs/adr/ADR-0004-toolchain-and-test-strategy.md`
 
 ## Pitfalls

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDelayedFlag } from './useDelayedFlag';
-import { StyleSheet, View } from 'react-native';
+import { PanResponder, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BoardSelection } from '@boardclimb/application';
 import {
@@ -38,6 +38,10 @@ import { useProblemLog } from './useProblemLog';
 /** Space around the board: sides line up with the header, and the bottom keeps it clear of the action bar. */
 const CANVAS_INSET_X = spacing.lg;
 const CANVAS_INSET_BOTTOM = spacing.lg;
+/** How far a horizontal swipe on the board must travel to step to the next or previous problem. */
+const SWIPE_DISTANCE = 56;
+/** With light on swipe on, the board follows only a problem the climber stays on this long, not each one flicked past. */
+const SETTLE_MS = 350;
 
 interface ProblemDetailScreenProps {
   container: AppContainer;
@@ -59,7 +63,8 @@ interface ProblemDetailScreenProps {
 
 /**
  * The board-first problem screen, always dark like the wall it mirrors: grade and name on top, the full
- * board in the middle, and the log and Light up controls in the thumb zone. Lighting only on Light up.
+ * board in the middle, and the log and Light up controls in the thumb zone. Swiping the board steps between
+ * problems. Lighting only on Light up, or on settling on a problem while light on swipe is on (FR-008a).
  */
 export function ProblemDetailScreen(props: ProblemDetailScreenProps) {
   return (
@@ -147,6 +152,29 @@ function ProblemDetail({
   const drawn = current ?? problem;
   // Say we are loading only if it takes long enough to notice; a quick load just fades the board in.
   const slow = useDelayedFlag(!(drawn && geometry !== undefined), 700);
+
+  // Light on swipe: once the climber settles on a problem, the session decides whether to light it.
+  useEffect(() => {
+    if (!current) return;
+    const timer = setTimeout(() => void container.session.showing(current), SETTLE_MS);
+    return () => clearTimeout(timer);
+  }, [container, current]);
+
+  // Latest step handlers for the gesture, which is created once.
+  const steps = useRef({ onPrevious, onNext });
+  steps.current = { onPrevious, onNext };
+  const swipe = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
+        onPanResponderRelease: (_, gesture) => {
+          if (gesture.dx <= -SWIPE_DISTANCE) steps.current.onNext?.();
+          else if (gesture.dx >= SWIPE_DISTANCE) steps.current.onPrevious?.();
+        },
+      }),
+    [],
+  );
 
   const rating = formatRating(summary.rating);
   const grade = displayGrade(summary.grade, gradeScale);
@@ -249,6 +277,7 @@ function ProblemDetail({
         {/* 2. Full-board dark canvas: takes all remaining height, no vertical scroll needed */}
         <View
           style={styles.canvasContainer}
+          {...swipe.panHandlers}
           onLayout={(event) => {
             const width = Math.round(event.nativeEvent.layout.width) - CANVAS_INSET_X * 2;
             const height = Math.round(event.nativeEvent.layout.height) - CANVAS_INSET_BOTTOM;
@@ -303,6 +332,10 @@ function ProblemDetail({
             onSetFlash={log.setFlash}
             onLightUp={() => {
               if (current) void container.session.lightUp(current);
+            }}
+            onChangeLightOnSwipe={(next) => {
+              // Switching it on is an explicit request: the problem on screen lights straight away.
+              if (container.session.setLightOnSwipe(next) && current) void container.session.showing(current);
             }}
             onOpenBoard={onOpenBoard}
             onOpenDetails={() => setShowDetails(true)}
