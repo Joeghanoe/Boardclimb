@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ScrollViewInstance } from 'react-native';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
   BoardErrorCode,
   BoardSelection,
@@ -9,8 +10,10 @@ import type {
 } from '@boardclimb/application';
 import {
   AppText,
+  BLOCKS,
   Button,
-  Card,
+  Icon,
+  IconButton,
   Notice,
   radii,
   spacing,
@@ -19,12 +22,14 @@ import {
 } from '@boardclimb/design-system';
 import { MANUFACTURERS } from '@boardclimb/domain';
 import type { AppContainer } from '../composition/AppContainer';
+import { BoardPicker } from './BoardPicker';
+import { ScanPulse } from './ScanPulse';
 import { ConfigurationSheet } from './ConfigurationSheet';
 import { ModeBanner } from './ModeBanner';
-import { ScreenFrame } from './ScreenFrame';
 import { describeBoardError } from './presentation/describeBoardError';
 import { describeConfiguration } from './presentation/describeConfiguration';
 import { describeManufacturer } from './presentation/describeManufacturer';
+import { manufacturerBlocks } from './presentation/manufacturerBlocks';
 import { useBoardSnapshot } from './useBoardSnapshot';
 
 interface BoardScreenProps {
@@ -43,8 +48,8 @@ type Scan =
   | { state: 'failed'; code: BoardErrorCode };
 
 /**
- * Connect a physical board controller.
- * Opening Boards scans nearby. The climber chooses the board and confirms its layout.
+ * Connect a physical board controller. Opening it scans for Kilter, MoonBoard and Tension boards nearby; the
+ * climber picks one and confirms its layout. When nothing is found, the layout can be picked by hand.
  * Connecting never auto-lights LEDs and never connects automatically (FR-002, FR-003, FR-011, FR-017).
  */
 export function BoardScreen({
@@ -56,6 +61,7 @@ export function BoardScreen({
   onUseLayout,
 }: BoardScreenProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const scanEpoch = useRef(0);
   const scroll = useRef<ScrollViewInstance>(null);
   const [editingLayout, setEditingLayout] = useState(false);
@@ -144,411 +150,274 @@ export function BoardScreen({
   const connectionError = snapshot.error ? describeBoardError(snapshot.error.code) : null;
   const connected = snapshot.connection === 'connected';
 
-  const connectionTone = connected
-    ? colors.connected
-    : snapshot.connection === 'connecting'
-      ? colors.connecting
-      : snapshot.connection === 'lost'
-        ? colors.danger
-        : colors.disconnected;
+  const connecting = snapshot.connection === 'connecting';
+  const lost = snapshot.connection === 'lost';
+  const scanning = scan.state === 'scanning';
 
-  const connectionLabel = connected
-    ? 'CONNECTED'
-    : snapshot.connection === 'connecting'
-      ? 'CONNECTING...'
-      : snapshot.connection === 'lost'
-        ? 'CONNECTION LOST'
-        : 'NOT CONNECTED';
-
-  return (
-    <ScreenFrame title="Board connection" onBack={onBack}>
-      <ScrollView ref={scroll} contentContainerStyle={styles.content}>
-        <ModeBanner mode={container.mode} persistent={container.persistent} />
-
-        {/* CONTROLLER STATUS HERO SURFACE */}
-        <Card
-          style={[
-            styles.heroCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: connected ? colors.connected : colors.divider,
-            },
-          ]}
-        >
-          <View style={styles.cardHeaderRow}>
-            <View style={styles.badge}>
-              <View style={[styles.statusDot, { backgroundColor: connectionTone }]} />
-              <AppText variant="caption" style={[styles.badgeText, { color: colors.text }]}>
-                {connectionLabel}
-              </AppText>
-            </View>
-            {snapshot.board ? (
-              <View style={styles.badge}>
-                <AppText variant="caption" style={{ color: colors.textMuted, fontWeight: '700' }}>
-                  {describeManufacturer(snapshot.board.manufacturer)}
-                </AppText>
-              </View>
-            ) : null}
+  const body = (() => {
+    if (connected && snapshot.board && !choosing) {
+      return (
+        <View style={styles.state}>
+          <View style={styles.statusRow}>
+            <View style={[styles.dot, { backgroundColor: colors.connected }]} />
+            <AppText variant="caption" tone="muted">
+              Connected
+            </AppText>
           </View>
-
-          {connected && snapshot.board ? (
-            <View style={styles.controllerDetail}>
-              <AppText variant="display" style={[styles.boldTitle, { color: colors.text }]}>
-                {snapshot.board.name ?? 'Board Controller'}
-              </AppText>
-              {snapshot.configuration ? (
-                <AppText variant="bodyStrong" style={{ color: colors.accent }}>
-                  {describeConfiguration(snapshot.configuration)}
-                </AppText>
-              ) : null}
-              <AppText variant="caption" tone="muted">
-                Open a problem and tap Light up.
-              </AppText>
-            </View>
-          ) : snapshot.connection === 'connecting' ? (
-            <View style={styles.controllerDetail}>
-              <AppText variant="title" style={styles.boldTitle}>
-                Connecting to controller...
-              </AppText>
-              <AppText variant="caption" tone="muted">
-                Establishing Bluetooth link with the wall.
-              </AppText>
-            </View>
-          ) : snapshot.connection === 'lost' ? (
-            <View style={styles.controllerDetail}>
-              <AppText variant="title" style={[styles.boldTitle, { color: colors.danger }]}>
-                Bluetooth connection lost
-              </AppText>
-              <AppText variant="caption" tone="muted">
-                The link to the wall controller dropped. Stand near the wall and tap Reconnect.
-              </AppText>
-            </View>
-          ) : (
-            <View style={styles.controllerDetail}>
-              <AppText variant="title" style={styles.boldTitle}>
-                Find your wall’s controller
-              </AppText>
-              <AppText variant="caption" tone="muted">
-                Scan and choose the controller at your wall.
-              </AppText>
-            </View>
-          )}
-
-          {connectionError ? (
-            <Notice tone="error" title={connectionError.title} message={connectionError.action} />
+          <AppText variant="display" numberOfLines={2}>
+            {snapshot.board.name ?? describeManufacturer(snapshot.board.manufacturer)}
+          </AppText>
+          {snapshot.configuration ? (
+            <AppText tone="muted">{describeConfiguration(snapshot.configuration)}</AppText>
           ) : null}
-
-          {snapshot.connection === 'lost' ? (
+          <View style={styles.actions}>
+            <Button
+              label="Change layout"
+              onPress={() => {
+                if (snapshot.board) pick(snapshot.board);
+                setEditingLayout(true);
+              }}
+            />
+            <Button label="Disconnect" onPress={() => void container.session.disconnect()} />
+          </View>
+        </View>
+      );
+    }
+    if (connecting) {
+      return (
+        <View style={styles.state} accessibilityLiveRegion="polite">
+          <View style={styles.statusRow}>
+            <ActivityIndicator color={colors.text} />
+            <AppText variant="bodyStrong">Connecting to {snapshot.board?.name ?? 'board'}…</AppText>
+          </View>
+          <Button label="Cancel" onPress={() => void container.session.disconnect()} />
+        </View>
+      );
+    }
+    if (lost && !choosing) {
+      return (
+        <View style={styles.state}>
+          <AppText variant="title">Lost connection to {snapshot.board?.name ?? 'board'}</AppText>
+          <View style={styles.actions}>
             <Button
               label="Reconnect"
               variant="primary"
               large
               onPress={() => void container.session.reconnect()}
             />
-          ) : null}
-
-          {connected && snapshot.board && !choosing ? (
-            <Button
-              label="Change wall layout"
-              onPress={() => {
-                if (snapshot.board) pick(snapshot.board);
-                setEditingLayout(true);
-              }}
-            />
-          ) : null}
-
-          {connected || snapshot.connection === 'lost' || snapshot.connection === 'connecting' ? (
-            <Button
-              label={snapshot.connection === 'connecting' ? 'Cancel connection' : 'Disconnect'}
-              onPress={() => void container.session.disconnect()}
-            />
-          ) : null}
-        </Card>
-
-        {/* HARDWARE CONFIRMATION PANEL */}
-        {choosing ? (
-          <Card
-            style={[styles.choosingCard, { backgroundColor: colors.surface, borderColor: colors.primary }]}
+            <Button label="Disconnect" onPress={() => void container.session.disconnect()} />
+          </View>
+        </View>
+      );
+    }
+    if (choosing) {
+      return (
+        <View style={styles.state}>
+          <AppText variant="display" numberOfLines={2} accessibilityRole="header">
+            {boardLabel(choosing)}
+          </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              selectedLayout ? `Layout ${describeConfiguration(selectedLayout)}. Change` : 'Choose layout'
+            }
+            disabled={layouts.length === 0}
+            onPress={() => setEditingLayout(true)}
+            style={({ pressed }) => [
+              styles.row,
+              { backgroundColor: colors.surface },
+              pressed && styles.pressed,
+            ]}
           >
-            <View style={styles.cardHeaderRow}>
-              <View style={styles.badge}>
-                <AppText variant="caption" style={[styles.badgeText, { color: colors.textMuted }]}>
-                  CONTROLLER & LAYOUT
-                </AppText>
-              </View>
-            </View>
-
-            <View style={styles.controllerDetail}>
-              <AppText variant="title" accessibilityRole="header" aria-level={2} style={styles.boldTitle}>
-                Connect to {boardLabel(choosing)}
-              </AppText>
-              <View style={styles.hardwareSpecs}>
-                <AppText variant="caption" tone="muted">
-                  Brand: {describeManufacturer(choosing.manufacturer)}
-                </AppText>
-                {selectedLayout && selectedLayout.id === choosing.detectedConfigurationId ? (
-                  <AppText variant="caption" style={{ color: colors.accent, fontWeight: '700' }}>
-                    Layout auto-detected
-                  </AppText>
-                ) : null}
-              </View>
-            </View>
-
-            <View
-              style={[
-                styles.layoutSummaryBox,
-                { backgroundColor: colors.surfaceMuted, borderColor: colors.divider },
-              ]}
-            >
-              <AppText variant="caption" style={{ color: colors.textMuted, fontWeight: '800' }}>
-                TARGET WALL LAYOUT
-              </AppText>
-              {selectedLayout ? (
-                <AppText variant="bodyStrong" style={[styles.boldTitle, { color: colors.text }]}>
-                  {describeConfiguration(selectedLayout)}
-                </AppText>
-              ) : (
-                <AppText tone="muted">
-                  {entries === null
+            <View style={styles.rowText}>
+              <AppText variant="bodyStrong" numberOfLines={1}>
+                {selectedLayout
+                  ? describeConfiguration(selectedLayout)
+                  : entries === null
                     ? 'Loading layouts…'
                     : entry && !entry.ok
-                      ? 'Layouts are unavailable. Go back and try again.'
-                      : 'Choose the layout and angle. The controller did not identify the wall layout.'}
-                </AppText>
-              )}
+                      ? 'Layouts unavailable'
+                      : 'Choose layout'}
+              </AppText>
+              <AppText variant="caption" tone="muted">
+                {describeManufacturer(choosing.manufacturer)}
+              </AppText>
             </View>
-
-            <Button
-              label="Connect controller"
-              variant="primary"
-              large
-              disabled={!selectedLayout}
-              onPress={connect}
-            />
-
-            <Button
-              label={selectedLayout ? 'Change layout' : 'Choose layout'}
-              disabled={layouts.length === 0}
-              onPress={() => setEditingLayout(true)}
-            />
-
-            <ConfigurationSheet
-              visible={editingLayout}
-              title={describeManufacturer(choosing.manufacturer)}
-              configurations={layouts}
-              selectedId={selectedLayout?.id ?? null}
-              onChoose={(configuration) => {
-                setLayoutId(configuration.id);
-                setEditingLayout(false);
-              }}
-              onClose={() => setEditingLayout(false)}
-            />
-
-            <Button label="Cancel selection" onPress={() => setChoosing(null)} />
-          </Card>
+            <Icon name="chevronRight" color={colors.textMuted} size={16} />
+          </Pressable>
+          <ModeBanner mode={container.mode} persistent={container.persistent} />
+          <View style={styles.actions}>
+            <Button label="Connect" variant="primary" large disabled={!selectedLayout} onPress={connect} />
+            <Button label="Cancel" onPress={() => setChoosing(null)} />
+          </View>
+        </View>
+      );
+    }
+    if (scanning && discovered.length === 0) {
+      return (
+        <View style={[styles.state, styles.centered]} accessibilityLiveRegion="polite">
+          <ScanPulse />
+          <View style={styles.centeredText}>
+            <AppText variant="title">Looking for boards…</AppText>
+            <AppText tone="muted" style={styles.textCenter}>
+              Stand near the wall. Tap your board when it appears.
+            </AppText>
+          </View>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.state}>
+        <View style={styles.statusRow} accessibilityLiveRegion="polite">
+          {scanning ? <ActivityIndicator color={colors.text} /> : null}
+          <AppText variant="title">
+            {scanning
+              ? 'Looking for boards…'
+              : discovered.length > 0
+                ? 'Choose your board'
+                : failure
+                  ? failure.title
+                  : describeBoardError('board_not_found').title}
+          </AppText>
+        </View>
+        {connectionError ? (
+          <Notice tone="error" title={connectionError.title} message={connectionError.action} />
         ) : null}
-
-        {/* SCAN & DISCOVER CONTROLLERS */}
-        <Card style={[styles.discoveryCard, { backgroundColor: colors.surface }]}>
-          <View style={styles.cardHeaderRow}>
-            <View style={styles.badge}>
-              <AppText variant="caption" style={[styles.badgeText, { color: colors.textMuted }]}>
-                NEARBY CONTROLLERS
-              </AppText>
-            </View>
-          </View>
-
-          <View style={styles.sectionTitles}>
-            <AppText variant="title" accessibilityRole="header" aria-level={2} style={styles.boldTitle}>
-              Find controllers
-            </AppText>
-          </View>
-
-          <Button
-            label={scan.state === 'scanning' ? 'Scanning nearby boards...' : 'Scan for controllers'}
-            variant="primary"
-            large
-            busy={scan.state === 'scanning'}
-            onPress={() => void search()}
-          />
-
-          {failure ? <Notice tone="error" title={failure.title} message={failure.action} /> : null}
-
-          {scan.state === 'done' && scan.boards.length === 0 ? (
-            <Notice
-              title={describeBoardError('board_not_found').title}
-              message={describeBoardError('board_not_found').action}
-            />
-          ) : null}
-
-          {discovered.length > 0 ? (
-            <View style={styles.discoveredList}>
-              <AppText variant="caption" style={{ color: colors.textMuted, fontWeight: '800' }}>
-                NEARBY BOARDS
-              </AppText>
-              {duplicateNames.size > 0 ? (
-                <AppText variant="caption" tone="muted">
-                  Some boards share a name. Move close to your wall and scan again. Stronger signals appear
-                  first.
-                </AppText>
-              ) : null}
-              {discovered.map((board) => (
-                <Pressable
-                  key={`${board.manufacturer}/${board.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Select ${boardLabel(board)}`}
-                  accessibilityHint="Choose this controller to pair"
-                  onPress={() => pick(board)}
-                  style={({ pressed }) => [
-                    styles.discoveredItem,
-                    {
-                      backgroundColor: colors.surfaceMuted,
-                      borderColor: colors.controlBorder,
-                    },
-                    pressed && styles.pressed,
+        {failure ? <AppText tone="muted">{failure.action}</AppText> : null}
+        {discovered.length > 0 ? (
+          <View style={[styles.list, { backgroundColor: colors.surface }]}>
+            {discovered.map((board, index) => (
+              <Pressable
+                key={`${board.manufacturer}/${board.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${boardLabel(board)}, ${describeManufacturer(board.manufacturer)}`}
+                onPress={() => pick(board)}
+                style={({ pressed }) => [
+                  styles.listRow,
+                  index > 0 && { borderTopColor: colors.divider, borderTopWidth: StyleSheet.hairlineWidth },
+                  pressed && { backgroundColor: colors.surfaceMuted },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.swatch,
+                    { backgroundColor: BLOCKS[manufacturerBlocks(board.manufacturer).from].bg },
                   ]}
-                >
-                  <View style={styles.discoveredInfo}>
-                    <AppText variant="bodyStrong" style={styles.boldTitle}>
-                      {boardLabel(board)}
-                    </AppText>
-                    <AppText variant="caption" tone="muted">
-                      {describeManufacturer(board.manufacturer)} controller
-                    </AppText>
-                  </View>
-                  <View
-                    style={[
-                      styles.selectBadge,
-                      { backgroundColor: colors.primary, borderColor: colors.primary },
-                    ]}
-                  >
-                    <AppText
-                      variant="caption"
-                      style={{ color: colors.onPrimary, fontWeight: '800', fontSize: 12 }}
-                    >
-                      SELECT
-                    </AppText>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
-        </Card>
-
-        <Button label="Browse without connecting" onPress={onChooseLayout} />
-
-        {/* DIAGNOSTICS NAVIGATION FOOTER */}
-        <Card style={[styles.diagnosticsCard, { backgroundColor: colors.surface }]}>
-          <View style={styles.diagnosticsInfo}>
-            <AppText variant="bodyStrong" style={styles.boldTitle}>
-              Diagnostics & Privacy
-            </AppText>
-            <AppText variant="caption" tone="muted">
-              View connection errors.
-            </AppText>
+                />
+                <View style={styles.rowText}>
+                  <AppText variant="bodyStrong" numberOfLines={1}>
+                    {boardLabel(board)}
+                  </AppText>
+                  <AppText variant="caption" tone="muted">
+                    {describeManufacturer(board.manufacturer)}
+                  </AppText>
+                </View>
+                <Icon name="chevronRight" color={colors.textMuted} size={16} />
+              </Pressable>
+            ))}
           </View>
-          <Button label="Open diagnostics" onPress={onOpenDiagnostics} />
-        </Card>
+        ) : null}
+        {scanning ? null : <Button label="Scan again" onPress={() => void search()} />}
+        {scanning || discovered.length > 0 ? null : (
+          <View style={styles.manual}>
+            <AppText variant="caption" tone="muted">
+              Or pick the board yourself
+            </AppText>
+            <BoardPicker selection={selection} onPress={onChooseLayout} />
+          </View>
+        )}
+      </View>
+    );
+  })();
+
+  return (
+    <View
+      style={[
+        styles.page,
+        {
+          backgroundColor: colors.background,
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+      ]}
+    >
+      <View style={styles.bar}>
+        <IconButton icon="back" label="Back" onPress={onBack} />
+        <IconButton
+          icon="pulse"
+          label="Diagnostics"
+          accessibilityHint="Connection history and errors"
+          onPress={onOpenDiagnostics}
+        />
+      </View>
+      <ScrollView
+        ref={scroll}
+        contentContainerStyle={[styles.content, scanning && discovered.length === 0 && styles.fill]}
+      >
+        {body}
       </ScrollView>
-    </ScreenFrame>
+      {choosing ? (
+        <ConfigurationSheet
+          visible={editingLayout}
+          title={describeManufacturer(choosing.manufacturer)}
+          configurations={layouts}
+          selectedId={selectedLayout?.id ?? null}
+          onChoose={(configuration) => {
+            setLayoutId(configuration.id);
+            setEditingLayout(false);
+          }}
+          onClose={() => setEditingLayout(false)}
+        />
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
-  heroCard: {
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  cardHeaderRow: {
+  page: { flex: 1 },
+  bar: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
-  badge: {
+  content: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    padding: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xxl,
+  },
+  state: { gap: spacing.lg },
+  fill: { flexGrow: 1, justifyContent: 'center', paddingBottom: spacing.xxl * 3 },
+  centered: { alignItems: 'center' },
+  centeredText: { alignItems: 'center', gap: spacing.xs, maxWidth: 300 },
+  textCenter: { textAlign: 'center' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  actions: { gap: spacing.sm },
+  list: { borderRadius: radii.lg, overflow: 'hidden' },
+  listRow: {
+    minHeight: touchTarget + 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs + 2,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  controllerDetail: {
-    gap: spacing.xs,
-  },
-  boldTitle: {
-    fontWeight: '800',
-  },
-  choosingCard: {
-    borderRadius: radii.lg,
-    padding: spacing.lg,
     gap: spacing.md,
-  },
-  hardwareSpecs: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  layoutSummaryBox: {
-    padding: spacing.md,
-    borderRadius: radii.md,
-    gap: spacing.xs,
-  },
-  discoveryCard: {
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  sectionTitles: {
-    gap: spacing.xs,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  discoveredList: {
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  discoveredItem: {
-    minHeight: touchTarget,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderRadius: radii.md,
+  },
+  row: {
+    minHeight: touchTarget + 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.md,
-  },
-  discoveredInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  selectBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 4,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  diagnosticsCard: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderRadius: radii.lg,
-    padding: spacing.lg,
-    gap: spacing.md,
   },
-  diagnosticsInfo: {
-    gap: spacing.xs,
-  },
-  pressed: {
-    opacity: 0.8,
-  },
+  rowText: { flex: 1, minWidth: 0 },
+  swatch: { width: 12, height: 34, borderRadius: 4 },
+  manual: { gap: spacing.sm, marginTop: spacing.lg },
+  pressed: { opacity: 0.7 },
 });

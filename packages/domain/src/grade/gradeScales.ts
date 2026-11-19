@@ -62,6 +62,19 @@ const V_TO_FONT: Readonly<Record<string, string>> = Object.fromEntries(
   [...FONT_LADDER].reverse().map((font) => [FONT_TO_V[font] as string, font] as const),
 );
 
+/**
+ * Below 6A the ladder has coarse steps ("4", "4+", "5", "5+") while boards publish lettered grades ("4a", "5c").
+ * Maps a lettered grade onto its step, so easy problems still match a grade range: a, b and c sit in the step,
+ * except 4c and 5c, which are the "+" step. Anything below 4 is "3".
+ */
+function lowFontStep(label: string): string | undefined {
+  const match = /^([1-5])([ABC])$/.exec(label);
+  if (!match) return undefined;
+  const [, number, letter] = match;
+  if (Number(number) < 4) return '3';
+  return letter === 'C' ? `${number}+` : number;
+}
+
 /** Builds a Grade from a published label. Unknown labels keep their text and get difficulty null. */
 export function makeGrade(system: GradeSystem, publishedLabel: string): Grade {
   const published = publishedLabel.trim().toUpperCase();
@@ -69,7 +82,7 @@ export function makeGrade(system: GradeSystem, publishedLabel: string): Grade {
     system === 'font' && /^[0-9][A-C]?[+]?[ ]*\/V(?:B|[0-9]+)$/.test(published)
       ? published.split('/')[0]!.trim()
       : published;
-  const fontLabel = system === 'font' ? key : V_TO_FONT[key];
+  const fontLabel = system === 'font' ? (lowFontStep(key) ?? key) : V_TO_FONT[key];
   const index = fontLabel === undefined ? -1 : FONT_LADDER.indexOf(fontLabel);
   return { system, label: publishedLabel, difficulty: index >= 0 ? index : null };
 }

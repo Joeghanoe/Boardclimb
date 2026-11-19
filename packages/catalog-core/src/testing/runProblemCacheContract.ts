@@ -147,6 +147,15 @@ export function runProblemCacheContract(
       expect((await cache.getSummary(makeProblemKey('kilter', 'cfg', 'e')))?.rating).toBeNull();
     });
 
+    it('keeps who set a problem and how many climbed it, and keeps them when a refresh does not say', async () => {
+      const cache = await create();
+      const known = { ...summary('s', '6A', 3), setter: 'tensionclimbing', ascents: 17777 };
+      await cache.upsertSummaries(CONFIG, [known]);
+      expect(await cache.getSummary(known.key)).toMatchObject({ setter: 'tensionclimbing', ascents: 17777 });
+      await cache.upsertSummaries(CONFIG, [summary('s', '6A', 3)]);
+      expect(await cache.getSummary(known.key)).toMatchObject({ setter: 'tensionclimbing', ascents: 17777 });
+    });
+
     it('keeps opened problem details so they work offline, and survives a later summary refresh', async () => {
       const cache = await create();
       await seedCache(cache);
@@ -159,6 +168,14 @@ export function runProblemCacheContract(
       expect(detail?.holds).toHaveLength(2);
       expect((await cache.getSummary(key))?.rating).toBe(1);
       expect(await cache.getDetail(makeProblemKey('kilter', 'cfg', 'a'))).toBeNull();
+    });
+
+    it('keeps the flipped holds of an opened problem, so Flip works offline', async () => {
+      const cache = await create();
+      const base = summary('m', '6A', 3);
+      const flipped = [{ holdId: '2', role: 'start' as const, x: 64, y: 4, ledPosition: 20 }];
+      await cache.saveDetail({ ...detailOf(base), mirroredHolds: flipped });
+      expect((await cache.getDetail(base.key))?.mirroredHolds).toEqual(flipped);
     });
 
     it('keeps a problem opened before it was listed, in its own configuration', async () => {

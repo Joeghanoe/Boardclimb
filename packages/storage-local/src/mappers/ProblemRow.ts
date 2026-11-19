@@ -10,5 +10,7 @@ export interface ProblemRow {
   grade_label: string;
   difficulty: number | null;
   rating: number | null;
+  setter: string | null;
+  ascents: number | null;
   detail_json: string | null;
 }

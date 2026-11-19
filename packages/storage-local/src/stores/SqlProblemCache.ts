@@ -12,19 +12,20 @@ import type { SqlValue } from '../database/SqlValue';
 import { rowToProblem, rowToSummary } from '../mappers/rowToProblem';
 
 const COLUMNS =
-  'seq, problem_key, manufacturer, configuration_id, provider_problem_id, name, grade_system, grade_label, difficulty, rating, detail_json';
+  'seq, problem_key, manufacturer, configuration_id, provider_problem_id, name, grade_system, grade_label, difficulty, rating, setter, ascents, detail_json';
 
 const UPSERT_COLUMNS =
-  '(problem_key, config_key, manufacturer, configuration_id, provider_problem_id, name, grade_system, grade_label, difficulty, rating)';
+  '(problem_key, config_key, manufacturer, configuration_id, provider_problem_id, name, grade_system, grade_label, difficulty, rating, setter, ascents)';
 const UPSERT_CONFLICT = `ON CONFLICT (problem_key) DO UPDATE SET
     name = excluded.name, grade_system = excluded.grade_system, grade_label = excluded.grade_label,
-    difficulty = excluded.difficulty, rating = excluded.rating`;
-const UPSERT = `INSERT INTO problems ${UPSERT_COLUMNS} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ${UPSERT_CONFLICT}`;
-/** Rows per statement: 10 parameters each stays under SQLite's oldest limit of 999 parameters. */
-const UPSERT_CHUNK = 90;
+    difficulty = excluded.difficulty, rating = excluded.rating,
+    setter = COALESCE(excluded.setter, problems.setter), ascents = COALESCE(excluded.ascents, problems.ascents)`;
+const UPSERT = `INSERT INTO problems ${UPSERT_COLUMNS} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ${UPSERT_CONFLICT}`;
+/** Rows per statement: 12 parameters each stays under SQLite's oldest limit of 999 parameters. */
+const UPSERT_CHUNK = 80;
 
 function upsertMany(count: number): string {
-  const row = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  const row = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
   return `INSERT INTO problems ${UPSERT_COLUMNS} VALUES ${Array.from({ length: count }, () => row).join(', ')} ${UPSERT_CONFLICT}`;
 }
 
@@ -40,6 +41,8 @@ function summaryParams(configKey: string, item: ProblemSummary): SqlValue[] {
     item.grade.label,
     item.grade.difficulty,
     item.rating,
+    item.setter ?? null,
+    item.ascents ?? null,
   ];
 }
 
@@ -122,6 +125,7 @@ export class SqlProblemCache implements ProblemCache {
           holds,
           ...(problem.bounds ? { bounds: problem.bounds } : {}),
           ...(problem.setter ? { setter: problem.setter } : {}),
+          ...(problem.mirroredHolds ? { mirroredHolds: problem.mirroredHolds } : {}),
         }),
         problem.key,
       ]);

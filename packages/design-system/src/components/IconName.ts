@@ -14,4 +14,6 @@ export type IconName =
   | 'close'
   | 'swap'
   | 'arrowUpRight'
-  | 'star';
+  | 'star'
+  | 'pulse'
+  | 'reset';

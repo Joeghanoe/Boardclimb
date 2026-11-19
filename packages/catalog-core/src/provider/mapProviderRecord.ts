@@ -8,6 +8,7 @@ import type {
   Problem,
   ProblemSummary,
 } from '@boardclimb/domain';
+import type { ProviderHoldRecord } from './ProviderHoldRecord';
 import type { ProviderProblemRecord } from './ProviderProblemRecord';
 import type { ProviderProblemSummaryRecord } from './ProviderProblemSummaryRecord';
 
@@ -23,12 +24,16 @@ export function toProblemSummary(
   configuration: BoardConfiguration,
   record: ProviderProblemSummaryRecord,
 ): ProblemSummary | null {
-  const { id, name, gradeSystem, gradeLabel, rating } = record;
+  const { id, name, gradeSystem, gradeLabel, rating, setter, ascents } = record;
   if (!isText(id) || !isText(name) || !isText(gradeLabel) || !GRADE_SYSTEMS.includes(gradeSystem))
     return null;
   const ratingValid =
     rating === null || (typeof rating === 'number' && Number.isFinite(rating) && rating >= 0 && rating <= 5);
   if (!ratingValid) return null;
+  if (setter !== undefined && setter !== null && typeof setter !== 'string') return null;
+  const ascentsValid =
+    ascents === undefined || ascents === null || (Number.isInteger(ascents) && ascents >= 0);
+  if (!ascentsValid) return null;
   return {
     key: makeProblemKey(configuration.manufacturer, configuration.id, id),
     manufacturer: configuration.manufacturer,
@@ -37,15 +42,15 @@ export function toProblemSummary(
     name,
     grade: makeGrade(gradeSystem as GradeSystem, gradeLabel),
     rating,
+    ...(isText(setter) ? { setter } : {}),
+    ...(typeof ascents === 'number' ? { ascents } : {}),
   };
 }
 
-/** Same as toProblemSummary, and every hold must be valid and at least one must exist. */
-export function toProblem(configuration: BoardConfiguration, record: ProviderProblemRecord): Problem | null {
-  const summary = toProblemSummary(configuration, record);
-  if (!summary || !Array.isArray(record.holds) || record.holds.length === 0) return null;
+/** Every hold must be valid; returns null when one is not. */
+function toHolds(records: readonly ProviderHoldRecord[]): HoldPlacement[] | null {
   const holds: HoldPlacement[] = [];
-  for (const hold of record.holds) {
+  for (const hold of records) {
     if (!isText(hold.holdId) || !HOLD_ROLES.includes(hold.role)) return null;
     if ([hold.x, hold.y, hold.ledPosition].some((value) => value !== undefined && !Number.isFinite(value)))
       return null;
@@ -57,13 +62,23 @@ export function toProblem(configuration: BoardConfiguration, record: ProviderPro
     if (hold.ledColor !== undefined && !/^[0-9a-f]{6}$/i.test(hold.ledColor)) return null;
     holds.push({ ...hold, role: hold.role as HoldRole });
   }
-  if (record.setter !== undefined && !isText(record.setter)) return null;
+  return holds;
+}
+
+/** Same as toProblemSummary, and every hold must be valid and at least one must exist. */
+export function toProblem(configuration: BoardConfiguration, record: ProviderProblemRecord): Problem | null {
+  const summary = toProblemSummary(configuration, record);
+  if (!summary || !Array.isArray(record.holds) || record.holds.length === 0) return null;
+  const holds = toHolds(record.holds);
+  if (!holds) return null;
+  const mirroredHolds = record.mirroredHolds === undefined ? undefined : toHolds(record.mirroredHolds);
+  if (mirroredHolds === null || (mirroredHolds && mirroredHolds.length !== holds.length)) return null;
   const bounds = record.bounds;
   if (bounds !== undefined && !isBoardBounds(bounds)) return null;
   return {
     ...summary,
     holds,
     ...(bounds ? { bounds } : {}),
-    ...(record.setter ? { setter: record.setter } : {}),
+    ...(mirroredHolds ? { mirroredHolds } : {}),
   };
 }

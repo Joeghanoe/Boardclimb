@@ -1,6 +1,9 @@
 import type { Migration } from './Migration';
 
-/** Version 1 is the layout in ADR-0003. The CHECK constraints repeat the domain rules as a last defence. */
+/**
+ * Version 1 is the layout in ADR-0003; version 2 adds who set each cached problem and how many people climbed it.
+ * The CHECK constraints repeat the domain rules as a last defence. Never edit a released migration; add one.
+ */
 export const MIGRATIONS: readonly Migration[] = [
   {
     version: 1,
@@ -46,6 +49,13 @@ export const MIGRATIONS: readonly Migration[] = [
         revision_token TEXT
       )`,
       'CREATE TABLE settings (key TEXT PRIMARY KEY, value_json TEXT NOT NULL)',
+    ],
+  },
+  {
+    version: 2,
+    statements: [
+      'ALTER TABLE problems ADD COLUMN setter TEXT',
+      'ALTER TABLE problems ADD COLUMN ascents INTEGER CHECK (ascents IS NULL OR ascents >= 0)',
     ],
   },
 ];

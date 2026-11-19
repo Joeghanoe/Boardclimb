@@ -12,25 +12,25 @@ async function version(db: BunSqliteDatabase): Promise<string | undefined> {
 }
 
 describe('migrations (NFR-004, AC-019)', () => {
-  it('creates the ADR-0003 layout at version 1 and reports the step', async () => {
+  it('creates the ADR-0003 layout at the newest version and reports the step', async () => {
     const db = new BunSqliteDatabase();
     const diagnostics = new RecordingDiagnostics();
-    expect(await migrate(db, diagnostics)).toBe(1);
-    expect(await version(db)).toBe('1');
+    expect(await migrate(db, diagnostics)).toBe(2);
+    expect(await version(db)).toBe('2');
     const tables = (
       await db.all<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'table'")
     ).map((row) => row.name);
     expect(tables).toEqual(
       expect.arrayContaining(['log_events', 'problems', 'catalog_sync_state', 'settings', 'meta']),
     );
-    expect(diagnostics.events).toEqual([{ name: 'storage.migrated', from: 0, to: 1 }]);
+    expect(diagnostics.events).toEqual([{ name: 'storage.migrated', from: 0, to: 2 }]);
   });
 
   it('is safe to run again and reports nothing the second time', async () => {
     const db = new BunSqliteDatabase();
     await migrate(db);
     const diagnostics = new RecordingDiagnostics();
-    expect(await migrate(db, diagnostics)).toBe(1);
+    expect(await migrate(db, diagnostics)).toBe(2);
     expect(diagnostics.events).toEqual([]);
   });
 
@@ -53,12 +53,28 @@ describe('migrations (NFR-004, AC-019)', () => {
     await migrate(db);
     const broken = [
       ...MIGRATIONS,
-      { version: 2, statements: ['CREATE TABLE half_done (id INTEGER)', 'THIS IS NOT SQL'] },
+      { version: 3, statements: ['CREATE TABLE half_done (id INTEGER)', 'THIS IS NOT SQL'] },
     ];
     await expect(migrate(db, undefined, broken)).rejects.toThrow();
-    expect(await version(db)).toBe('1');
+    expect(await version(db)).toBe('2');
     const half = await db.all("SELECT name FROM sqlite_master WHERE name = 'half_done'");
     expect(half).toEqual([]);
+  });
+
+  it('version 2 keeps cached problems from version 1 and adds setter and ascents empty', async () => {
+    const db = new BunSqliteDatabase();
+    await migrate(db, undefined, MIGRATIONS.slice(0, 1));
+    await db.run(
+      `INSERT INTO problems (problem_key, config_key, manufacturer, configuration_id, provider_problem_id, name,
+        grade_system, grade_label, difficulty, rating) VALUES ('k', 'kilter/c', 'kilter', 'c', 'p', 'Old', 'font', '6A', 5, 3)`,
+    );
+    const diagnostics = new RecordingDiagnostics();
+    expect(await migrate(db, diagnostics)).toBe(2);
+    expect(diagnostics.events).toEqual([{ name: 'storage.migrated', from: 1, to: 2 }]);
+    const rows = await db.all<{ name: string; setter: string | null; ascents: number | null }>(
+      'SELECT name, setter, ascents FROM problems',
+    );
+    expect(rows).toEqual([{ name: 'Old', setter: null, ascents: null }]);
   });
 
   it('AC-019: records survive closing and reopening the database file', async () => {

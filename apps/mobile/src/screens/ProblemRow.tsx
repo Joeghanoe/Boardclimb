@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { condensedSize, AppText, BLOCKS, Icon, radii, spacing, useTheme } from '@boardclimb/design-system';
+import { displaySize, AppText, BLOCKS, Icon, spacing, useTheme } from '@boardclimb/design-system';
 import type { GradeSystem, ProblemSummary } from '@boardclimb/domain';
 import { displayGrade } from './presentation/displayGrade';
+import { formatAscents } from './presentation/formatAscents';
 import { formatGrade } from './presentation/formatGrade';
 import { formatRating } from './presentation/formatRating';
 import { gradeBand } from './presentation/gradeBand';
@@ -10,21 +11,13 @@ interface ProblemRowProps {
   problem: ProblemSummary;
   context?: string;
   gradeScale: GradeSystem;
-  /** Position in the grouped list: rounds the group's outer corners and drops the last divider. */
-  first?: boolean;
+  /** Drops the divider under the last row. */
   last?: boolean;
   onPress: () => void;
 }
 
-/** One problem: a grade block coloured by difficulty band, the name, the rating. */
-export function ProblemRow({
-  problem,
-  onPress,
-  context,
-  gradeScale,
-  first = false,
-  last = false,
-}: ProblemRowProps) {
+/** One dense row: the grade block coloured by difficulty band, then the name and rating. The whole row opens the problem. */
+export function ProblemRow({ problem, onPress, context, gradeScale, last = false }: ProblemRowProps) {
   const { colors } = useTheme();
   const grade = displayGrade(problem.grade, gradeScale);
   const block = BLOCKS[gradeBand(problem.grade)];
@@ -32,19 +25,23 @@ export function ProblemRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${problem.name}, grade ${formatGrade(problem.grade)}, ${rating.spoken}${context ? ', ' + context : ''}`}
+      accessibilityLabel={[
+        problem.name,
+        `grade ${formatGrade(problem.grade)}`,
+        rating.spoken,
+        formatAscents(problem.ascents),
+        problem.setter ? `set by ${problem.setter}` : null,
+        context ?? null,
+      ]
+        .filter(Boolean)
+        .join(', ')}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.row,
-        { backgroundColor: pressed ? colors.surfaceMuted : colors.surface },
-        first && styles.first,
-        last && styles.last,
-      ]}
+      style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceMuted }]}
     >
-      <View style={[styles.tile, { backgroundColor: block.bg }]}>
+      <View style={[styles.grade, { backgroundColor: block.bg }]}>
         <AppText
           variant="title"
-          style={[styles.tileGrade, { color: block.on }]}
+          style={[styles.gradeText, { color: block.on }]}
           numberOfLines={1}
           adjustsFontSizeToFit
         >
@@ -52,11 +49,6 @@ export function ProblemRow({
         </AppText>
       </View>
       <View style={styles.body}>
-        {context ? (
-          <AppText tone="muted" variant="eyebrow" numberOfLines={1}>
-            {context}
-          </AppText>
-        ) : null}
         <AppText variant="label" numberOfLines={1} style={styles.name}>
           {problem.name}
         </AppText>
@@ -64,54 +56,48 @@ export function ProblemRow({
           {problem.rating === null ? null : (
             <Icon name="star" color={colors.textMuted} size={11} weight={2.2} />
           )}
-          <AppText tone="muted" variant="caption" style={styles.rating}>
-            {problem.rating === null ? rating.text : problem.rating.toFixed(1)}
+          <AppText tone="muted" variant="caption" style={styles.small} numberOfLines={1}>
+            {[
+              problem.rating === null ? rating.text : problem.rating.toFixed(1),
+              formatAscents(problem.ascents),
+              context ?? problem.setter ?? null,
+            ]
+              .filter(Boolean)
+              .join('  ·  ')}
           </AppText>
         </View>
-      </View>
-      <View style={[styles.go, { backgroundColor: colors.surfaceMuted }]}>
-        <Icon name="arrowUpRight" color={colors.text} size={14} weight={2.4} />
       </View>
       {last ? null : <View style={[styles.divider, { backgroundColor: colors.divider }]} />}
     </Pressable>
   );
 }
 
-const TILE = 40;
-
 const styles = StyleSheet.create({
   row: {
-    minHeight: 60,
+    minHeight: 66,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
   },
-  first: {
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    paddingTop: spacing.sm + 4,
-  },
-  last: {},
-  tile: {
-    width: TILE,
-    height: TILE,
+  body: { flex: 1, gap: 1 },
+  name: { fontSize: 17, lineHeight: 22 },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  small: { fontSize: 13, lineHeight: 18, flexShrink: 1 },
+  grade: {
+    width: 46,
+    height: 46,
     borderRadius: 12,
+    paddingHorizontal: 3,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 3,
   },
-  tileGrade: condensedSize(18),
-  body: { flex: 1, gap: 0 },
-  name: { fontSize: 15 },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  rating: { fontSize: 12, lineHeight: 16 },
-  go: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  gradeText: { ...displaySize(18), letterSpacing: -0.5 },
   divider: {
     position: 'absolute',
-    left: spacing.lg,
-    right: spacing.lg,
+    left: spacing.lg + 46 + spacing.md,
+    right: 0,
     bottom: 0,
     height: StyleSheet.hairlineWidth,
   },

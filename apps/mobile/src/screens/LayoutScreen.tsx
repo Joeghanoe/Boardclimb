@@ -229,8 +229,9 @@ const styles = StyleSheet.create({
   footer: {
     borderTopLeftRadius: radii.lg,
     borderTopRightRadius: radii.lg,
-    paddingVertical: spacing.sm,
-    gap: spacing.xs,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
   angleHead: {
     flexDirection: 'row',
@@ -238,5 +239,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
   },
-  action: { paddingHorizontal: spacing.lg },
+  action: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
 });

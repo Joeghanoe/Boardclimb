@@ -162,8 +162,11 @@ Untrusted: every provider response (validated into domain types at the adapter e
   manufacturer APIs. First download can be large; keep the app open on Wi-Fi. A failed
   refresh retains installed catalogs and all logs. Hardware metadata is pinned at the
   recorded revision; future placements fail closed until it is refreshed.
-- Animated/multi-frame climbs are omitted; no guessed flattening, mirrored configuration
-  inference or unverified V2 adjacent-LED extension. All currently published static layouts
+- Animated/multi-frame climbs are omitted; no guessed flattening or unverified V2
+  adjacent-LED extension. Tension Flip uses the pinned mirror placements from the
+  catalog (`tension-mirrors.json`), not geometry guesses; a problem with any hold lacking
+  a mirror on its layout cannot be flipped. Lighting a flipped problem on a real Tension
+  board is untested, like all hardware behaviour here. Kilter and MoonBoard have no Flip. All currently published static layouts
   are offered, but hardware must match the climber's manual size/layout/angle choice.
 - Problem-first discovery searches downloaded rows across manufacturers. Unseen remote
   layouts need an explicit layout choice and initial download. Log keys from the previous

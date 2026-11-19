@@ -17,5 +17,7 @@ export const ICON_PATHS: Record<IconName, string[]> = {
   close: ['M6 6l12 12', 'M18 6L6 18'],
   arrowUpRight: ['M7 17L17 7', 'M8 7h9v9'],
   star: ['M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z'],
+  reset: ['M4.5 12a7.5 7.5 0 1 0 2.2-5.3', 'M4.5 4.5v4h4'],
+  pulse: ['M3 12h4l3-7 4 14 3-7h4'],
   swap: ['M7 4L4 7l3 3', 'M4 7h13', 'M17 20l3-3-3-3', 'M20 17H7'],
 };

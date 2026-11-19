@@ -19,6 +19,7 @@ import outlineData from '../../data/hold-outlines.json';
 import type { SnapshotReader } from '../reader/SnapshotReader';
 import type { HardwareIndex } from '../hardware/HardwareIndex';
 import { indexHardware } from '../hardware/indexHardware';
+import { mirrorHolds } from './mirrorHolds';
 
 interface ClimbRow {
   uuid: string;
@@ -28,7 +29,7 @@ interface ClimbRow {
   frames_count: number;
   display_difficulty: number | null;
   quality_average: number | null;
-  ascents?: number;
+  ascents: number | null;
 }
 
 /**
@@ -39,7 +40,7 @@ export const SNAPSHOT_BROWSE_INDEX =
   'CREATE INDEX IF NOT EXISTS boardclimb_browse ON board_climb_stats (board_type, angle, (COALESCE(ascensionist_count, 0)) DESC, climb_uuid)';
 
 const COLUMNS =
-  'c.uuid,c.name,c.setter_username,c.frames,c.frames_count,s.display_difficulty,s.quality_average';
+  'c.uuid,c.name,c.setter_username,c.frames,c.frames_count,s.display_difficulty,s.quality_average,s.ascensionist_count AS ascents';
 /** A climb this app can show: listed, published, one frame, and fitting the chosen board size. */
 const SHOWABLE = `c.board_type=? AND c.layout_id=? AND c.is_listed=1 AND COALESCE(c.is_hidden,0)=0 AND COALESCE(c.is_draft,0)=0
       AND c.frames_count=1 AND c.frames<>''
@@ -152,6 +153,8 @@ export class SnapshotProviderSource implements ProviderSource {
       gradeSystem: 'font',
       gradeLabel: grade?.boulder_name ?? 'Not graded',
       rating: row.quality_average,
+      setter: row.setter_username,
+      ascents: row.ascents,
     };
   }
 
@@ -242,7 +245,7 @@ export class SnapshotProviderSource implements ProviderSource {
         params.push(position.ascents, position.ascents, position.uuid);
       }
       const rows = await db.all<ClimbRow>(
-        `SELECT ${COLUMNS}, COALESCE(s.ascensionist_count, 0) AS ascents
+        `SELECT ${COLUMNS}
         FROM board_climb_stats s JOIN board_climbs c ON c.uuid=s.climb_uuid
         WHERE s.board_type=? AND s.angle=? AND s.display_difficulty IS NOT NULL
         ${where.map((condition) => `AND ${condition}`).join(' ')}
@@ -332,11 +335,12 @@ export class SnapshotProviderSource implements ProviderSource {
       this.manufacturer === 'moonboard'
         ? { left: 0, right: 10, bottom: 0, top: layout === 6 || layout === 7 ? 11 : 17 }
         : { left: grid.edge_left, right: grid.edge_right, bottom: grid.edge_bottom, top: grid.edge_top };
+    const mirroredHolds = this.manufacturer === 'tension' ? mirrorHolds(holds, placements) : undefined;
     return {
       ...this.summary(row),
       holds,
       bounds,
-      ...(row.setter_username ? { setter: row.setter_username } : {}),
+      ...(mirroredHolds ? { mirroredHolds } : {}),
     };
   }
 }

@@ -8,4 +8,6 @@ export interface ProviderProblemSummaryRecord {
   gradeSystem: string;
   gradeLabel: string;
   rating: number | null;
+  setter?: string | null;
+  ascents?: number | null;
 }

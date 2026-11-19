@@ -5,14 +5,14 @@ export function describeConnection(snapshot: BoardSessionSnapshot): ConnectionLi
   const name = snapshot.board?.name ?? 'board';
   switch (snapshot.connection) {
     case 'connected':
-      return { tone: 'connected', label: `Connected to ${name}` };
+      return { tone: 'connected', label: `Connected to ${name}`, short: name };
     case 'connecting':
-      return { tone: 'connecting', label: 'Connecting…' };
+      return { tone: 'connecting', label: 'Connecting…', short: 'Connecting…' };
     case 'lost':
-      return { tone: 'disconnected', label: `Lost connection to ${name}` };
+      return { tone: 'disconnected', label: `Lost connection to ${name}`, short: 'Reconnect' };
     case 'failed':
-      return { tone: 'disconnected', label: 'Could not connect' };
+      return { tone: 'disconnected', label: 'Could not connect', short: 'Connect' };
     case 'idle':
-      return { tone: 'disconnected', label: 'No board connected' };
+      return { tone: 'disconnected', label: 'No board connected', short: 'Connect' };
   }
 }

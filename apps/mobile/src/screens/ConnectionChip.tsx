@@ -2,7 +2,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import {
   AppText,
   darkTheme,
-  lightTheme,
   radii,
   shadows,
   spacing,
@@ -16,16 +15,23 @@ interface ConnectionChipProps {
   snapshot: BoardSessionSnapshot;
   /** When given, the chip is a button that opens the board screen; without it, it only reports the state. */
   onPress?: () => void;
-  /** 'charcoal' sits on the dark board screen, 'glass' on a colour block. */
+  /** 'charcoal' sits on the dark board screen, 'glass' is smoked glass over a colour field. */
   surface?: 'paper' | 'charcoal' | 'glass';
+  /** Shows the short label; screen readers still hear the full state. */
+  compact?: boolean;
 }
 
 /** The connection state at a glance. State is worded, not only coloured. */
-export function ConnectionChip({ snapshot, onPress, surface = 'paper' }: ConnectionChipProps) {
+export function ConnectionChip({
+  snapshot,
+  onPress,
+  surface = 'paper',
+  compact = false,
+}: ConnectionChipProps) {
   const { colors } = useTheme();
   const line = describeConnection(snapshot);
   const dark = surface === 'charcoal';
-  const dot = (dark ? darkTheme.colors : surface === 'glass' ? lightTheme.colors : colors)[line.tone];
+  const dot = (dark || surface === 'glass' ? darkTheme.colors : colors)[line.tone];
   const content = (
     <>
       <View style={[styles.dot, { backgroundColor: dot }]} />
@@ -34,10 +40,10 @@ export function ConnectionChip({ snapshot, onPress, surface = 'paper' }: Connect
         numberOfLines={1}
         style={[
           styles.label,
-          { color: dark ? colors.onSurfaceCharcoal : surface === 'glass' ? '#151618' : colors.text },
+          { color: dark ? colors.onSurfaceCharcoal : surface === 'glass' ? GLASS_INK : colors.text },
         ]}
       >
-        {line.label}
+        {compact ? line.short : line.label}
       </AppText>
     </>
   );
@@ -46,12 +52,12 @@ export function ConnectionChip({ snapshot, onPress, surface = 'paper' }: Connect
     dark
       ? { backgroundColor: colors.surfaceCharcoalRaised }
       : surface === 'glass'
-        ? { backgroundColor: 'rgba(255,255,255,0.72)' }
+        ? { backgroundColor: GLASS }
         : [{ backgroundColor: colors.surface }, shadows.soft],
   ];
   if (!onPress) {
     return (
-      <View accessibilityLiveRegion="polite" style={chipBase}>
+      <View accessibilityLiveRegion="polite" accessible accessibilityLabel={line.label} style={chipBase}>
         {content}
       </View>
     );
@@ -67,6 +73,10 @@ export function ConnectionChip({ snapshot, onPress, surface = 'paper' }: Connect
     </Pressable>
   );
 }
+
+/** Smoked glass: the colour field shows through, text stays light and readable. */
+const GLASS = 'rgba(12, 13, 15, 0.55)';
+const GLASS_INK = '#F4F4F1';
 
 const styles = StyleSheet.create({
   chip: {

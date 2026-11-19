@@ -7,13 +7,18 @@ import { describeCatalogError } from './describeCatalogError';
 import { describeCommand } from './describeCommand';
 import { describeConnection } from './describeConnection';
 import { describeFilters } from './describeFilters';
+import { describeLayoutDetail } from './describeLayoutDetail';
 import { describeLogError } from './describeLogError';
+import { isOfflineWithoutBoardList } from './isOfflineWithoutBoardList';
 import { describeMode } from './describeMode';
+import { flipProblem } from './flipProblem';
+import { formatAscents } from './formatAscents';
 import { formatAttempts } from './formatAttempts';
 import { formatGrade } from './formatGrade';
 import { gradeBand } from './gradeBand';
 import { displayGrade } from './displayGrade';
 import { filtersToRange, rangeToFilters } from './gradeRange';
+import { gradeStopPositions } from './gradeStopPositions';
 import { gradeStops } from './gradeStops';
 import { formatRating } from './formatRating';
 import { formatSessionDay } from './formatSessionDay';
@@ -90,6 +95,12 @@ describe('connection wording', () => {
       'Lost connection to Wall A',
     );
     expect(describeConnection(base).tone).toBe('disconnected');
+  });
+
+  it('keeps a compact label that names the board when connected and says what to do otherwise', () => {
+    expect(describeConnection({ ...base, connection: 'connected', board }).short).toBe('Wall A');
+    expect(describeConnection(base).short).toBe('Connect');
+    expect(describeConnection({ ...base, connection: 'lost', board }).short).toBe('Reconnect');
   });
 });
 
@@ -202,4 +213,92 @@ it('FR-007 preserves the provider’s paired Font/V label instead of replacing i
   const grade = makeGrade('font', '6a/V2');
   expect(grade.difficulty).toBe(makeGrade('font', '6A').difficulty);
   expect(formatGrade(grade)).toBe('6a/V2');
+});
+
+describe('UI-2: the board bar names the layout once', () => {
+  it('drops the board name the layout repeats and adds the angle', () => {
+    expect(describeLayoutDetail('Kilter Board Original', 'Kilter Board Original · 8 x 12', 40)).toBe(
+      '8 x 12  ·  40°',
+    );
+    expect(describeLayoutDetail('Tension Board 2', '12 x 12 Mirror', null)).toBe('12 x 12 Mirror');
+    expect(describeLayoutDetail('MoonBoard', 'MoonBoard', 25)).toBe('25°');
+  });
+});
+
+describe('FR-006: downloaded problems stand in only when offline', () => {
+  it('falls back when the board list is empty because the phone is offline', () => {
+    expect(isOfflineWithoutBoardList({ loading: false, itemCount: 0, notice: 'network_unavailable' })).toBe(
+      true,
+    );
+  });
+
+  it('keeps the board list when cached problems show, while loading, or for other failures', () => {
+    expect(isOfflineWithoutBoardList({ loading: false, itemCount: 12, notice: 'network_unavailable' })).toBe(
+      false,
+    );
+    expect(isOfflineWithoutBoardList({ loading: true, itemCount: 0, notice: 'network_unavailable' })).toBe(
+      false,
+    );
+    expect(isOfflineWithoutBoardList({ loading: false, itemCount: 0, notice: 'provider_rejected' })).toBe(
+      false,
+    );
+  });
+});
+
+describe('FR-007: ascent counts read at a glance', () => {
+  it('counts small numbers exactly and shortens thousands', () => {
+    expect(formatAscents(1)).toBe('1 ascent');
+    expect(formatAscents(842)).toBe('842 ascents');
+    expect(formatAscents(17777)).toBe('17.8k ascents');
+    expect(formatAscents(2000)).toBe('2k ascents');
+  });
+
+  it('says nothing for an unknown count or none yet', () => {
+    expect(formatAscents(0)).toBeNull();
+    expect(formatAscents(undefined)).toBeNull();
+  });
+});
+
+describe('Flip shows and lights the mirrored holds, and only those', () => {
+  const problem = {
+    key,
+    manufacturer: 'tension' as const,
+    configurationId: 'config-1',
+    providerProblemId: 'p1',
+    name: 'Masquerade',
+    grade: makeGrade('font', '6A'),
+    rating: 3,
+    holds: [{ holdId: '1', role: 'start' as const }],
+    mirroredHolds: [{ holdId: '2', role: 'start' as const }],
+  };
+
+  it('swaps in the mirrored holds when Flip is on, keeping the same problem', () => {
+    const flipped = flipProblem(problem, true);
+    expect(flipped.holds).toEqual([{ holdId: '2', role: 'start' }]);
+    expect(flipped.key).toBe(problem.key);
+    expect(flipProblem(problem, false).holds).toEqual(problem.holds);
+  });
+
+  it('leaves a problem without a full mirror as it is', () => {
+    const { mirroredHolds: _unused, ...plain } = problem;
+    expect(flipProblem(plain, true).holds).toEqual(plain.holds);
+    expect(flipProblem(null, true)).toBeNull();
+  });
+});
+
+describe('FR-007: switching Font and V keeps the grade slider where it was', () => {
+  it('puts a Font grade and the V grade it maps to at the same spot on the track', () => {
+    const font = gradeStops('font');
+    const v = gradeStops('v');
+    const fontAt = gradeStopPositions(font);
+    const vAt = gradeStopPositions(v);
+    expect(fontAt[font.findIndex((stop) => stop.label === '7C+')]).toBe(
+      vAt[v.findIndex((stop) => stop.label === 'V10')],
+    );
+    expect(fontAt[0]).toBe(0);
+    expect(vAt[0]).toBe(0);
+    expect(fontAt.at(-1)).toBe(1);
+    expect(vAt.at(-1)).toBe(1);
+    expect([...vAt].sort((a, b) => a - b)).toEqual(vAt);
+  });
 });
