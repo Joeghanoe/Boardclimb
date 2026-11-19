@@ -19,7 +19,6 @@ interface AppShellProps {
 
 /** Chooses the screen for the current route. Browsing is the home screen; the board is one tap away, never required. */
 export function AppShell({ container }: AppShellProps) {
-  const [mode, setMode] = useState<'board' | 'downloaded' | null>(null);
   const [search, setSearch] = useState('');
   const [browsed, setBrowsed] = useState<BrowsedList>({
     items: [],
@@ -113,7 +112,6 @@ export function AppShell({ container }: AppShellProps) {
               (item): item is ProblemSummary => item !== undefined,
             )}
             enterFrom={stepDirection}
-            loadingNext={waitingAfter === route.summary.key}
             onPrevious={previousFor(route.summary)}
             onNext={nextFor(route.summary)}
           />
@@ -125,7 +123,6 @@ export function AppShell({ container }: AppShellProps) {
             current={browse.selection}
             onBack={navigation.pop}
             onChoose={(selection) => {
-              setMode('board');
               browse.chooseSelection(selection);
               navigation.pop();
             }}
@@ -139,7 +136,6 @@ export function AppShell({ container }: AppShellProps) {
             onBack={navigation.pop}
             onChooseLayout={() => navigation.replace({ name: 'layout' })}
             onUseLayout={(selection) => {
-              setMode('board');
               browse.chooseSelection(selection);
             }}
             onOpenDiagnostics={() => navigation.push({ name: 'diagnostics' })}
@@ -166,9 +162,7 @@ export function AppShell({ container }: AppShellProps) {
           <ProblemListScreen
             container={container}
             active={route.name === 'problems'}
-            downloaded={(mode ?? (browse.selection ? 'board' : 'downloaded')) === 'downloaded'}
             search={search}
-            onChangeDownloaded={(value) => setMode(value ? 'downloaded' : 'board')}
             onChangeSearch={setSearch}
             selection={browse.selection}
             filters={browse.filters}

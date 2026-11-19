@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Svg, { Circle, G, Polygon, Rect } from 'react-native-svg';
+import Svg, { Circle, G, Polygon } from 'react-native-svg';
 import type { BoardGeometry, Problem } from '@boardclimb/domain';
 import { AppText, ROLE_COLORS } from '@boardclimb/design-system';
 import { boardHoldShapes } from './presentation/boardHoldShapes';
@@ -47,12 +47,6 @@ export function BoardMap({ problem, geometry, maxHeight = 500, maxWidth }: Board
         accessibilityRole="image"
         accessibilityLabel={`Complete board, ${holds.length} holds. ${problem.holds.length - missing} route holds outlined. Green start, cyan hand, yellow foot, magenta finish. Bottom of the board is at the bottom.`}
       >
-        <Rect
-          width={boardWidth}
-          height={boardHeight}
-          rx={Math.min(boardWidth, boardHeight) * 0.045}
-          fill="#1C1C1F"
-        />
         {shapes.map(({ holdId, x, y, radius, points, extent }) => {
           const role = roles.get(holdId);
           return (

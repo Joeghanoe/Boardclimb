@@ -4,7 +4,7 @@ import { PanResponder, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BoardSelection } from '@boardclimb/application';
 import {
-  condensedSize,
+  displaySize,
   AppText,
   BLOCKS,
   Button,
@@ -14,20 +14,19 @@ import {
   motion,
   ThemeContext,
   darkTheme,
-  radii,
   spacing,
   useTheme,
-  typography,
 } from '@boardclimb/design-system';
 import type { BoardGeometry, GradeSystem, Problem, ProblemKey, ProblemSummary } from '@boardclimb/domain';
 import type { AppContainer } from '../composition/AppContainer';
 import { BoardMap } from './BoardMap';
-import { ConnectionChip } from './ConnectionChip';
 import { ProblemActionBar } from './ProblemActionBar';
 import { ProblemDetailsSheet } from './ProblemDetailsSheet';
 import { catalogErrorCode } from './presentation/catalogErrorCode';
 import { describeCatalogError } from './presentation/describeCatalogError';
 import { displayGrade } from './presentation/displayGrade';
+import { flipProblem } from './presentation/flipProblem';
+import { formatAscents } from './presentation/formatAscents';
 import { formatGrade } from './presentation/formatGrade';
 import { gradeBand } from './presentation/gradeBand';
 import { manufacturerBlocks } from './presentation/manufacturerBlocks';
@@ -50,13 +49,10 @@ interface ProblemDetailScreenProps {
   gradeScale: GradeSystem;
   onBack: () => void;
   onOpenBoard: () => void;
-  /** Absent at either end of the browsed list. */
   /** The problems either side in the browsed list, read ahead. */
   neighbours: readonly ProblemSummary[];
   /** Which side the last step came from, so the new problem slides in from there. */
   enterFrom?: 1 | -1;
-  /** Next was tapped at the end of what is loaded and more are on the way. */
-  loadingNext?: boolean;
   onPrevious?: (() => void) | undefined;
   onNext?: (() => void) | undefined;
 }
@@ -83,7 +79,6 @@ function ProblemDetail({
   onOpenBoard,
   neighbours,
   enterFrom = 1,
-  loadingNext = false,
   onPrevious,
   onNext,
 }: ProblemDetailScreenProps) {
@@ -94,6 +89,7 @@ function ProblemDetail({
   const [geometry, setGeometry] = useState<BoardGeometry | null | undefined>(undefined);
   const [failure, setFailure] = useState<ReturnType<typeof describeCatalogError> | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [flippedOn, setFlippedOn] = useState(false);
   const [canvas, setCanvas] = useState<{ width: number; height: number } | null>(null);
 
   const snapshot = useBoardSnapshot(container.session);
@@ -148,8 +144,11 @@ function ProblemDetail({
   }, [container, selection.configuration]);
 
   // Only the problem named in the header may be lit; the previous board stays drawn until it is ready.
-  const current = problem?.key === summary.key ? problem : (loaded.current.get(summary.key) ?? null);
-  const drawn = current ?? problem;
+  const loadedCurrent = problem?.key === summary.key ? problem : (loaded.current.get(summary.key) ?? null);
+  // With Flip on, what is drawn and what Light up sends are the mirrored holds; the log key stays the same.
+  const current = useMemo(() => flipProblem(loadedCurrent, flippedOn), [loadedCurrent, flippedOn]);
+  const drawn = current ?? flipProblem(problem, flippedOn);
+  const canFlip = Boolean(loadedCurrent?.mirroredHolds);
   // Say we are loading only if it takes long enough to notice; a quick load just fades the board in.
   const slow = useDelayedFlag(!(drawn && geometry !== undefined), 700);
 
@@ -176,6 +175,8 @@ function ProblemDetail({
     [],
   );
 
+  const connected = snapshot.connection === 'connected';
+  const lightOnSwipe = connected && snapshot.lightOnSwipe;
   const rating = formatRating(summary.rating);
   const grade = displayGrade(summary.grade, gradeScale);
   const angle = selection.configuration.angleDegrees;
@@ -194,7 +195,7 @@ function ProblemDetail({
         },
       ]}
     >
-      <View style={[styles.glow, { height: insets.top + 220 }]}>
+      <View style={[styles.glow, { height: insets.top + 160 }]}>
         <GradientBackdrop
           from={BLOCKS[glow.from].bg}
           to={BLOCKS[glow.to].bg}
@@ -203,81 +204,77 @@ function ProblemDetail({
         />
       </View>
       <View style={styles.column}>
-        <View style={styles.header}>
-          <View style={styles.toolbar}>
-            <IconButton icon="back" label="Back" variant="raised" onPress={onBack} />
-            <View style={styles.toolbarRight}>
-              <ConnectionChip snapshot={snapshot} onPress={onOpenBoard} surface="charcoal" />
-              <IconButton
-                icon="info"
-                label="Details"
-                variant="raised"
-                accessibilityHint="Holds, setter, history and attempt corrections"
-                onPress={() => setShowDetails(true)}
-              />
-            </View>
-          </View>
-
-          <View style={styles.identity} accessibilityRole="header">
-            <Reveal
-              trigger={summary.key}
-              fromX={14 * enterFrom}
-              duration={motion.quick}
-              style={styles.identityMain}
-            >
-              <View
-                accessible
-                accessibilityLabel={`Grade ${formatGrade(summary.grade)}`}
-                style={[styles.gradeBlock, { backgroundColor: block.bg }]}
-              >
-                <AppText
-                  variant="display"
-                  style={[styles.grade, { color: block.on }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
+        <View style={styles.toolbar}>
+          <IconButton icon="back" label="Back" variant="glass" onPress={onBack} />
+          <View style={styles.spacer} />
+          <IconButton
+            icon="board"
+            label="Light on swipe"
+            variant={lightOnSwipe ? 'solid' : 'glass'}
+            fill={colors.primary}
+            onFill={colors.onPrimary}
+            checked={lightOnSwipe}
+            accessibilityHint={
+              connected ? 'Lights each problem you swipe to on the board' : 'Opens boards to connect first'
+            }
+            onPress={() => {
+              if (!connected) return onOpenBoard();
+              // Switching it on is an explicit request: the problem on screen lights straight away.
+              if (container.session.setLightOnSwipe(!snapshot.lightOnSwipe) && current)
+                void container.session.showing(current);
+            }}
+          />
+          <IconButton
+            icon="info"
+            label="Details"
+            variant="glass"
+            accessibilityHint="Holds, setter, history and attempt corrections"
+            onPress={() => setShowDetails(true)}
+          />
+        </View>
+        <Reveal trigger={summary.key} fromX={14 * enterFrom} duration={motion.quick} style={styles.identity}>
+          <View
+            accessible
+            accessibilityRole="header"
+            accessibilityLabel={`${summary.name}, grade ${formatGrade(summary.grade)}, ${rating.spoken}${angle === null ? '' : `, ${angle} degrees`}`}
+          >
+            <AppText variant="bodyStrong" numberOfLines={1} style={styles.name}>
+              {summary.name}
+            </AppText>
+            {summary.setter ? (
+              <AppText variant="caption" tone="muted" numberOfLines={1} style={styles.setter}>
+                {summary.setter}
+              </AppText>
+            ) : null}
+            <View style={styles.meta}>
+              <View style={[styles.gradeTag, { backgroundColor: block.bg }]}>
+                <AppText variant="title" style={[styles.gradeText, { color: block.on }]} numberOfLines={1}>
                   {grade}
                 </AppText>
               </View>
-              <View style={styles.nameBlock}>
-                <AppText variant="display" numberOfLines={2} style={styles.name}>
-                  {summary.name}
-                </AppText>
-                <AppText
-                  variant="caption"
-                  tone="muted"
-                  numberOfLines={1}
-                  accessibilityLabel={`${rating.spoken}${angle === null ? '' : `, ${angle} degrees`}`}
-                >
-                  {rating.text}
-                  {angle === null ? '' : `  ·  ${angle}°`}
-                </AppText>
-              </View>
-            </Reveal>
-            <View style={styles.stepper}>
-              <IconButton
-                icon="back"
-                label="Previous problem"
-                variant="raised"
-                disabled={!onPrevious}
-                onPress={() => onPrevious?.()}
-              />
-              <IconButton
-                icon="chevronRight"
-                label="Next problem"
-                variant="raised"
-                busy={loadingNext}
-                disabled={!onNext}
-                onPress={() => onNext?.()}
-              />
+              <AppText variant="caption" tone="muted" numberOfLines={1}>
+                {[rating.text, formatAscents(summary.ascents), angle === null ? null : `${angle}°`]
+                  .filter(Boolean)
+                  .join('  ·  ')}
+              </AppText>
             </View>
           </View>
-        </View>
+        </Reveal>
 
         {/* 2. Full-board dark canvas: takes all remaining height, no vertical scroll needed */}
         <View
           style={styles.canvasContainer}
           {...swipe.panHandlers}
+          accessible
+          accessibilityLabel="Board. Swipe left or right for the next or previous problem"
+          accessibilityActions={[
+            ...(onNext ? [{ name: 'next', label: 'Next problem' }] : []),
+            ...(onPrevious ? [{ name: 'previous', label: 'Previous problem' }] : []),
+          ]}
+          onAccessibilityAction={(event) => {
+            if (event.nativeEvent.actionName === 'next') onNext?.();
+            if (event.nativeEvent.actionName === 'previous') onPrevious?.();
+          }}
           onLayout={(event) => {
             const width = Math.round(event.nativeEvent.layout.width) - CANVAS_INSET_X * 2;
             const height = Math.round(event.nativeEvent.layout.height) - CANVAS_INSET_BOTTOM;
@@ -312,15 +309,7 @@ function ProblemDetail({
         </View>
 
         {/* 3. Compact bottom action bar: - attempt, Top, Flash, + attempt, Light up */}
-        <View
-          style={[
-            styles.sheet,
-            {
-              backgroundColor: colors.surface,
-              paddingBottom: Math.max(spacing.sm, insets.bottom - spacing.lg),
-            },
-          ]}
-        >
+        <View style={[styles.sheet, { paddingBottom: Math.max(spacing.sm, insets.bottom - spacing.lg) }]}>
           <ProblemActionBar
             summary={log.summary}
             logGuidance={log.problem}
@@ -333,12 +322,8 @@ function ProblemDetail({
             onLightUp={() => {
               if (current) void container.session.lightUp(current);
             }}
-            onChangeLightOnSwipe={(next) => {
-              // Switching it on is an explicit request: the problem on screen lights straight away.
-              if (container.session.setLightOnSwipe(next) && current) void container.session.showing(current);
-            }}
             onOpenBoard={onOpenBoard}
-            onOpenDetails={() => setShowDetails(true)}
+            {...(canFlip ? { flip: { on: flippedOn, onChange: setFlippedOn } } : {})}
           />
         </View>
       </View>
@@ -349,10 +334,9 @@ function ProblemDetail({
         onClose={() => setShowDetails(false)}
         selection={selection}
         summary={summary}
-        problem={current}
+        problem={loadedCurrent}
         logSummary={log.summary}
         today={log.today}
-        onAdjustAttempts={(delta) => void log.adjustAttempts(delta)}
       />
     </View>
   );
@@ -361,43 +345,33 @@ function ProblemDetail({
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   column: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center' },
-  header: {
+  toolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-    gap: spacing.md,
+    paddingTop: spacing.xs,
   },
-  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  toolbarRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  gradeBlock: {
-    width: 56,
-    height: 56,
-    borderRadius: 17,
-    paddingHorizontal: 4,
+  spacer: { flex: 1 },
+  identity: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    marginTop: -spacing.xs,
+  },
+  name: { textAlign: 'center', fontSize: 17 },
+  setter: { textAlign: 'center' },
+  meta: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: 2,
   },
-  grade: condensedSize(24),
-  /**
-   * Always as tall as a two-line name plus the rating, with both pinned to the bottom: stepping between short and
-   * long names never moves the board, and a short name keeps its rating right under it.
-   */
-  nameBlock: {
-    flex: 1,
-    gap: 2,
-    height: condensedSize(26).lineHeight * 2 + 2 + typography.caption.lineHeight,
-    justifyContent: 'flex-end',
-  },
-  stepper: { flexDirection: 'row', gap: spacing.sm },
-  identityMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  name: condensedSize(26),
+  gradeTag: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 },
+  gradeText: { ...displaySize(14), letterSpacing: -0.3 },
   glow: { position: 'absolute', top: 0, left: 0, right: 0, opacity: 0.32 },
-  sheet: {
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    paddingTop: spacing.sm,
-  },
+  sheet: { paddingTop: spacing.xs },
   canvasContainer: {
     flex: 1,
     width: '100%',

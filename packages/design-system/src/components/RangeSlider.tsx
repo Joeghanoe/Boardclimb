@@ -8,6 +8,11 @@ import { touchTarget } from '../tokens/layout';
 interface RangeSliderProps {
   /** Number of positions; the thumbs sit on 0 … count - 1. */
   count: number;
+  /**
+   * Where each position sits along the track, 0 to 1 and increasing. Evenly spaced when left out. Two scales that
+   * share these fractions keep a thumb in place when the climber switches between them.
+   */
+  positions?: readonly number[];
   low: number;
   high: number;
   /** While dragging, for live labels. */
@@ -28,6 +33,7 @@ const THUMB = 28;
  */
 export function RangeSlider({
   count,
+  positions,
   low,
   high,
   onPreview,
@@ -39,40 +45,54 @@ export function RangeSlider({
   const { colors } = useTheme();
   const [width, setWidth] = useState(0);
   const [range, setRange] = useState<[number, number]>([low, high]);
+  /** The dragged thumb follows the finger exactly; it snaps to the nearest position when let go. */
+  const [drag, setDrag] = useState<{ thumb: 0 | 1; x: number } | null>(null);
   const live = useRef(range);
   live.current = range;
-  const props = useRef({ width, count, onPreview, onChange });
-  props.current = { width, count, onPreview, onChange };
+  const fractionFor = (index: number) =>
+    positions?.[index] ?? (count <= 1 ? 0 : index / Math.max(1, count - 1));
+  const props = useRef({ width, count, onPreview, onChange, fractionFor });
+  props.current = { width, count, onPreview, onChange, fractionFor };
 
   useEffect(() => setRange([low, high]), [low, high]);
 
-  const last = Math.max(1, count - 1);
-  const xFor = (index: number) => (width * index) / last;
+  const xFor = (index: number) => width * fractionFor(index);
+  const xOf = (thumb: 0 | 1) => (drag?.thumb === thumb ? drag.x : xFor(range[thumb]));
 
   const responder = (thumb: 0 | 1): GestureResponderHandlers => {
     let start = 0;
+    const finish = () => {
+      setDrag(null);
+      props.current.onChange(live.current[0], live.current[1]);
+    };
     return PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
-        start = (props.current.width * live.current[thumb]) / Math.max(1, props.current.count - 1);
+        start = props.current.width * props.current.fractionFor(live.current[thumb]);
       },
       onPanResponderMove: (_event, gesture) => {
-        const { width: w, count: n } = props.current;
+        const { width: w, count: n, fractionFor: at } = props.current;
         if (w <= 0) return;
-        const raw = Math.round(((start + gesture.dx) / w) * (n - 1));
-        const clamped = Math.max(0, Math.min(n - 1, raw));
         const [l, h] = live.current;
-        const next: [number, number] = thumb === 0 ? [Math.min(clamped, h), h] : [l, Math.max(clamped, l)];
+        // A thumb never passes the other one.
+        const min = thumb === 0 ? 0 : w * at(l);
+        const max = thumb === 0 ? w * at(h) : w;
+        const x = Math.max(min, Math.min(max, start + gesture.dx));
+        setDrag({ thumb, x });
+        let nearest = 0;
+        for (let index = 1; index < n; index += 1)
+          if (Math.abs(w * at(index) - x) < Math.abs(w * at(nearest) - x)) nearest = index;
+        const next: [number, number] = thumb === 0 ? [Math.min(nearest, h), h] : [l, Math.max(nearest, l)];
         if (next[0] !== l || next[1] !== h) {
           setRange(next);
           live.current = next;
           props.current.onPreview?.(next[0], next[1]);
         }
       },
-      onPanResponderRelease: () => props.current.onChange(live.current[0], live.current[1]),
-      onPanResponderTerminate: () => props.current.onChange(live.current[0], live.current[1]),
+      onPanResponderRelease: finish,
+      onPanResponderTerminate: finish,
     }).panHandlers;
   };
   const [lowHandlers] = useState(() => responder(0));
@@ -99,7 +119,7 @@ export function RangeSlider({
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={(event) => step(index, event)}
       hitSlop={8}
-      style={[styles.hit, { left: xFor(range[index]) - touchTarget / 2 }]}
+      style={[styles.hit, { left: xOf(index) - touchTarget / 2 }]}
     >
       <View
         style={[styles.thumb, { backgroundColor: colors.surface, borderColor: colors.text }, shadows.soft]}
@@ -111,12 +131,7 @@ export function RangeSlider({
     <View style={styles.wrap} onLayout={(event) => setWidth(event.nativeEvent.layout.width - THUMB)}>
       <View style={styles.inner}>
         <View style={[styles.track, { backgroundColor: colors.surfaceMuted }]} />
-        <View
-          style={[
-            styles.fill,
-            { backgroundColor: colors.text, left: xFor(range[0]), width: xFor(range[1]) - xFor(range[0]) },
-          ]}
-        />
+        <View style={[styles.fill, { backgroundColor: colors.text, left: xOf(0), width: xOf(1) - xOf(0) }]} />
         {thumb(0, lowHandlers)}
         {thumb(1, highHandlers)}
       </View>

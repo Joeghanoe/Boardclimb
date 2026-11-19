@@ -4,6 +4,7 @@ import type { ProviderProblemSummaryRecord } from './ProviderProblemSummaryRecor
 
 export interface ProviderProblemRecord extends ProviderProblemSummaryRecord {
   holds: ProviderHoldRecord[];
-  setter?: string;
   bounds?: BoardBounds;
+  /** The same problem flipped left to right, when every hold has a known mirror on the board. */
+  mirroredHolds?: ProviderHoldRecord[];
 }

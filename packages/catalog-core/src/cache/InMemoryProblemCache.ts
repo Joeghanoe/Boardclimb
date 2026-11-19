@@ -38,7 +38,17 @@ export class InMemoryProblemCache implements ProblemCache {
   upsertSummaries(configKey: string, items: ProblemSummary[]): Promise<void> {
     for (const summary of items) {
       const existing = this.rows.get(summary.key);
-      if (existing) existing.summary = summary;
+      // A refresh that does not say who set it or how many climbed it keeps what was known (as SQL COALESCE).
+      if (existing)
+        existing.summary = {
+          ...summary,
+          ...(summary.setter === undefined && existing.summary.setter !== undefined
+            ? { setter: existing.summary.setter }
+            : {}),
+          ...(summary.ascents === undefined && existing.summary.ascents !== undefined
+            ? { ascents: existing.summary.ascents }
+            : {}),
+        };
       else this.rows.set(summary.key, { seq: this.nextSeq++, configKey, summary, detail: null });
     }
     return Promise.resolve();

@@ -48,3 +48,13 @@ may carry `x`, `y`, `ledPosition` and `ledColor`. These are validated source-der
 cached details. Legacy details with only holds remain readable; there is no new
 column, migration, log payload, stored total or session rule. External catalog
 snapshot files are separate read-only inputs, never replacements for boardclimb.db.
+
+## Setter and ascents on cached summaries (2026-11-18, migration 2)
+
+Approved by the product owner on 2026-11-18 so the problem list can show who set a
+problem and how many climbed it. Migration 2 adds two nullable columns to `problems`:
+`setter TEXT` and `ascents INTEGER` (CHECK `ascents >= 0`). NULL means the provider did
+not say; a refresh that omits them keeps the stored value (`COALESCE`). Rows from
+version 1 survive with both NULL until the next refresh. Logs, the log rule and
+session rule are unchanged. Covered by `packages/storage-local/tests/migrations.test.ts`
+(version 1 to 2) and the shared ProblemCache contract.

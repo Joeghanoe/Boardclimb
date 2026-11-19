@@ -43,6 +43,21 @@ describe('grades keep the published label (FR-007)', () => {
   });
 });
 
+describe('lettered grades below 6A sit on the ladder (FR-007)', () => {
+  it('places the easy lettered grades boards publish, so "Easiest to 6A" still shows them', () => {
+    const six = makeGrade('font', '6A').difficulty as number;
+    for (const label of ['3c/V0', '4a/V0', '4c/V0', '5a/V1', '5b/V1', '5c/V2']) {
+      const difficulty = makeGrade('font', label).difficulty;
+      expect(difficulty).not.toBeNull();
+      expect(difficulty as number).toBeLessThan(six);
+    }
+    expect(makeGrade('font', '5a').difficulty).toBe(makeGrade('font', '5').difficulty);
+    expect(makeGrade('font', '5c/V2').difficulty).toBe(makeGrade('font', '5+').difficulty);
+    expect(makeGrade('font', '2b/V0').difficulty).toBe(makeGrade('font', '3').difficulty);
+    expect(makeGrade('font', '5a/V1').label).toBe('5a/V1');
+  });
+});
+
 describe('global filters (FR-007)', () => {
   const rated = { grade: makeGrade('font', '6B'), rating: 3.5 };
   const unrated = { grade: makeGrade('font', '6B'), rating: null };

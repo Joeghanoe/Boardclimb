@@ -13,8 +13,11 @@ interface IconButtonProps {
   onPress: () => void;
   /** Visible word under the circle, for actions whose icon alone is not enough. */
   caption?: string;
-  /** 'surface' floats on paper, 'glass' sits on a colour block, 'raised' on charcoal, 'solid' is filled with `fill`. */
-  variant?: 'surface' | 'glass' | 'raised' | 'solid';
+  /**
+   * 'surface' floats on paper, 'glass' is smoked glass over a colour field, 'raised' on charcoal, 'ghost' is the bare icon on
+   * charcoal, 'solid' is filled with `fill`.
+   */
+  variant?: 'surface' | 'glass' | 'raised' | 'ghost' | 'solid';
   fill?: string;
   onFill?: string;
   size?: number;
@@ -46,9 +49,14 @@ export function IconButton({
   const { colors } = useTheme();
   const palette = {
     surface: { background: colors.surface, icon: colors.text, caption: colors.textMuted },
-    glass: { background: 'rgba(255,255,255,0.72)', icon: '#151618', caption: '#151618' },
+    glass: { background: 'rgba(12, 13, 15, 0.55)', icon: '#F4F4F1', caption: '#F4F4F1' },
     raised: {
       background: colors.surfaceCharcoalRaised,
+      icon: colors.onSurfaceCharcoal,
+      caption: colors.onSurfaceCharcoalMuted,
+    },
+    ghost: {
+      background: 'transparent',
       icon: colors.onSurfaceCharcoal,
       caption: colors.onSurfaceCharcoalMuted,
     },

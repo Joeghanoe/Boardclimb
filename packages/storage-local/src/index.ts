@@ -1,6 +1,7 @@
 export * from './database/SqlDatabase';
 export * from './database/SqlValue';
 export * from './database/StorageError';
+export * from './database/TransactionQueue';
 
 export * from './migrations/Migration';
 export * from './migrations/migrate';

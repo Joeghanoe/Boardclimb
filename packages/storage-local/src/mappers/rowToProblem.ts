@@ -20,6 +20,8 @@ export function rowToSummary(row: ProblemRow): ProblemSummary {
     name: row.name,
     grade: { system: row.grade_system, label: row.grade_label, difficulty: row.difficulty },
     rating: row.rating,
+    ...(row.setter ? { setter: row.setter } : {}),
+    ...(row.ascents === null ? {} : { ascents: row.ascents }),
   };
 }
 
@@ -29,30 +31,35 @@ export function rowToProblem(row: ProblemRow): Problem | null {
   let holds: unknown;
   let setter: unknown;
   let bounds: Problem['bounds'];
+  let mirroredHolds: unknown;
   try {
     const detail = JSON.parse(row.detail_json) as {
       holds?: unknown;
       setter?: unknown;
       bounds?: Problem['bounds'];
+      mirroredHolds?: unknown;
     };
     holds = detail.holds;
+    mirroredHolds = detail.mirroredHolds;
     setter = detail.setter;
     bounds = detail.bounds;
   } catch {
     throw corrupt(row);
   }
-  const valid =
-    Array.isArray(holds) &&
-    holds.every(
+  const isHoldList = (value: unknown): value is HoldPlacement[] =>
+    Array.isArray(value) &&
+    value.every(
       (hold: Partial<HoldPlacement>) => typeof hold.holdId === 'string' && typeof hold.role === 'string',
     );
-  if (!valid) throw corrupt(row);
+  if (!isHoldList(holds)) throw corrupt(row);
+  if (mirroredHolds !== undefined && !isHoldList(mirroredHolds)) throw corrupt(row);
   if (bounds !== undefined && !isBoardBounds(bounds)) throw corrupt(row);
   if (setter !== undefined && typeof setter !== 'string') throw corrupt(row);
   return {
     ...rowToSummary(row),
-    holds: holds as HoldPlacement[],
+    holds,
     ...(bounds ? { bounds } : {}),
     ...(typeof setter === 'string' ? { setter } : {}),
+    ...(mirroredHolds === undefined ? {} : { mirroredHolds }),
   };
 }

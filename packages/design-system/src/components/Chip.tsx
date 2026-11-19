@@ -1,7 +1,6 @@
 import { Platform, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 import { radii, spacing, touchTarget } from '../tokens/layout';
-import { shadows } from '../tokens/shadows';
 import { AppText } from './AppText';
 
 interface ChipProps {
@@ -12,7 +11,7 @@ interface ChipProps {
   testID?: string;
 }
 
-/** A choice from a short list (rating filter, manufacturer). Selected state is shown by an inverted fill and the selected state. */
+/** A choice from a short list (rating filter, manufacturer). The selected one is inverted (text colour fill), so it reads on any surface. */
 export function Chip({ label, selected, onPress, accessibilityLabel, testID }: ChipProps) {
   const { colors } = useTheme();
   return (
@@ -26,14 +25,13 @@ export function Chip({ label, selected, onPress, accessibilityLabel, testID }: C
       style={[
         styles.chip,
         {
-          backgroundColor: selected ? colors.surfaceCharcoal : colors.surface,
+          backgroundColor: selected ? colors.text : colors.surfaceMuted,
         },
-        !selected && shadows.soft,
       ]}
     >
       <AppText
         variant="label"
-        style={{ color: selected ? colors.onSurfaceCharcoal : colors.text }}
+        style={{ color: selected ? colors.background : colors.text }}
         importantForAccessibility="no"
       >
         {label}

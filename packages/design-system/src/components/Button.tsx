@@ -1,6 +1,6 @@
 import { ActivityIndicator, Platform, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/useTheme';
-import { condensedSize, radii, spacing, touchTarget, typography } from '../tokens/layout';
+import { displaySize, radii, spacing, touchTarget, typography } from '../tokens/layout';
 import { shadows } from '../tokens/shadows';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   large: { minHeight: 58, paddingHorizontal: spacing.xl },
-  largeLabel: { ...typography.title, ...condensedSize(21) },
+  largeLabel: { ...typography.title, ...displaySize(18) },
   pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.4 },
 });

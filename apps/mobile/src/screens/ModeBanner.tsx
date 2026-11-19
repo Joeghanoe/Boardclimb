@@ -6,12 +6,14 @@ import { describePersistence } from './presentation/describePersistence';
 interface ModeBannerProps {
   mode: 'sample' | 'unverified' | 'live';
   persistent: boolean;
+  /** False leaves out the live-board compatibility note; it belongs where the climber connects, not on every list. */
+  compatibility?: boolean;
 }
 
 /** One quiet strip for sample data and unsaved records; nothing is shown once real sources and storage are in use. */
-export function ModeBanner({ mode, persistent }: ModeBannerProps) {
+export function ModeBanner({ mode, persistent, compatibility = true }: ModeBannerProps) {
   const { colors } = useTheme();
-  const sample = describeMode(mode);
+  const sample = mode === 'live' && !compatibility ? null : describeMode(mode);
   const unsaved = describePersistence(persistent);
   const first = sample ?? unsaved;
   if (!first) return null;
